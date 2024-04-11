@@ -1,0 +1,53 @@
+[{"stream_name":"stdout","time":22.191529026,"data":"Found 250 images belonging to 10 classes.\n"}
+,{"stream_name":"stdout","time":26.049866107,"data":"     red  green  blue\n"}
+,{"stream_name":"stdout","time":26.049904525,"data":"0    254    103     0\n"}
+,{"stream_name":"stdout","time":26.049911201,"data":"1    255    103     0\n"}
+,{"stream_name":"stdout","time":26.049915869,"data":"2    235     97    35\n"}
+,{"stream_name":"stdout","time":26.049920635,"data":"3    255    153     0\n"}
+,{"stream_name":"stdout","time":26.049925313,"data":"4    255    160     0\n"}
+,{"stream_name":"stdout","time":26.049929709,"data":"..   ...    ...   ...\n"}
+,{"stream_name":"stdout","time":26.049934303,"data":"245  168    121     0\n"}
+,{"stream_name":"stdout","time":26.049939302,"data":"246  152     98    60\n"}
+,{"stream_name":"stdout","time":26.049943745,"data":"247  159    129   112\n"}
+,{"stream_name":"stdout","time":26.049948298,"data":"248   74     44    42\n"}
+,{"stream_name":"stdout","time":26.049953305,"data":"249  127     98    68\n"}
+,{"stream_name":"stdout","time":26.049958142,"data":"\n"}
+,{"stream_name":"stdout","time":26.0499625,"data":"[250 rows x 3 columns]\n"}
+,{"stream_name":"stdout","time":26.049967362,"data":"      color\n"}
+,{"stream_name":"stdout","time":26.04997269,"data":"0    orange\n"}
+,{"stream_name":"stdout","time":26.049977392,"data":"1    orange\n"}
+,{"stream_name":"stdout","time":26.049981974,"data":"2    orange\n"}
+,{"stream_name":"stdout","time":26.049986499,"data":"3    orange\n"}
+,{"stream_name":"stdout","time":26.049991011,"data":"4    orange\n"}
+,{"stream_name":"stdout","time":26.049995347,"data":"..      ...\n"}
+,{"stream_name":"stdout","time":26.050000115,"data":"245   brown\n"}
+,{"stream_name":"stdout","time":26.050004605,"data":"246   brown\n"}
+,{"stream_name":"stdout","time":26.050009884,"data":"247   brown\n"}
+,{"stream_name":"stdout","time":26.05001455,"data":"248   brown\n"}
+,{"stream_name":"stdout","time":26.050019291,"data":"249   brown\n"}
+,{"stream_name":"stdout","time":26.050023763,"data":"\n"}
+,{"stream_name":"stdout","time":26.050028167,"data":"[250 rows x 1 columns]\n"}
+,{"stream_name":"stdout","time":26.073517746,"data":"(250, 3)\n"}
+,{"stream_name":"stdout","time":26.073546963,"data":"(250, 1)\n"}
+,{"stream_name":"stderr","time":26.095377069,"data":"/opt/conda/lib/python3.7/site-packages/sklearn/preprocessing/_label.py:115: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n"}
+,{"stream_name":"stderr","time":26.095424975,"data":"  y = column_or_1d(y, warn=True)\n"}
+,{"stream_name":"stdout","time":26.1197101,"data":"X train shape:  (162, 3)\n"}
+,{"stream_name":"stdout","time":26.11974355,"data":"y train shape:  (162,)\n"}
+,{"stream_name":"stdout","time":26.119751056,"data":"X test shape:  (88, 3)\n"}
+,{"stream_name":"stdout","time":26.119757006,"data":"y test shape:  (88,)\n"}
+,{"stream_name":"stdout","time":26.470022976,"data":"Test Accuracy: 93.18181818181817\n"}
+,{"stream_name":"stdout","time":26.511674886,"data":"Test Accuracy 90.9090909090909\n"}
+,{"stream_name":"stdout","time":26.550275411,"data":"Accuracy:  85.22727272727273\n"}
+,{"stream_name":"stdout","time":26.590870023,"data":"Test accuracy:  93.18181818181817\n"}
+,{"stream_name":"stderr","time":32.72747822,"data":"/opt/conda/lib/python3.7/site-packages/traitlets/traitlets.py:2758: FutureWarning: --Exporter.preprocessors=[\"remove_papermill_header.RemovePapermillHeader\"] for containers is deprecated in traitlets 5.0. You can pass `--Exporter.preprocessors item` ... multiple times to add items to a list.\n"}
+,{"stream_name":"stderr","time":32.727539426,"data":"  FutureWarning,\n"}
+,{"stream_name":"stderr","time":32.727548275,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":33.014159694,"data":"[NbConvertApp] Writing 49400 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":35.488947852,"data":"/opt/conda/lib/python3.7/site-packages/traitlets/traitlets.py:2758: FutureWarning: --Exporter.preprocessors=[\"nbconvert.preprocessors.ExtractOutputPreprocessor\"] for containers is deprecated in traitlets 5.0. You can pass `--Exporter.preprocessors item` ... multiple times to add items to a list.\n"}
+,{"stream_name":"stderr","time":35.488986682,"data":"  FutureWarning,\n"}
+,{"stream_name":"stderr","time":35.488994247,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":36.290173906,"data":"[NbConvertApp] Support files will be in __results___files/\n"}
+,{"stream_name":"stderr","time":36.290217778,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":36.2905299,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":36.290779102,"data":"[NbConvertApp] Writing 299292 bytes to __results__.html\n"}
+]
