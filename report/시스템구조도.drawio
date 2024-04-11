@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net" modified="2024-04-08T06:10:25.677Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" etag="UoFeXEVyPKPWeu21wTRq" version="24.2.2" type="google">
+  <diagram name="페이지-1" id="V5c9NQmEpCZtMpCuYyj9">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-1" value="" style="rounded=0;whiteSpace=wrap;html=1;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="70" width="1030" height="340" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="t5MDqeNtydGqhWdQy3CR-17" target="t5MDqeNtydGqhWdQy3CR-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="t5MDqeNtydGqhWdQy3CR-31" target="t5MDqeNtydGqhWdQy3CR-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-2" value="Android App" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;opacity=0;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="1">
+          <mxGeometry x="32" y="77" width="80" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="360" y="243.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-19" value="" style="group;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="50" y="100" width="261" height="287" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-8" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#EFF4FC;strokeColor=#6c8ebf;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry width="261" height="287" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-9" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Object Recognition Function&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.019999999999982" y="27" width="240.92" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-10" value="Function Selection" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;opacity=0;align=left;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.019999999999982" y="8" width="110.42" height="13" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-15" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Color Recognition and Description Function&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.039999999999964" y="79" width="240.92" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-16" value="&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#0d0d0d&quot; face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Voice-Guided Tutorial Function&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.019999999999982" y="182" width="240.92" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-17" value="&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#0d0d0d&quot; face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Voice Response Customization Function (Speed &amp;amp; Tone)&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.039999999999964" y="234" width="240.92" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-18" value="&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#0d0d0d&quot; face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Photo to Text and &lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font color=&quot;#0d0d0d&quot; face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Speech Conversion Function&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-19">
+          <mxGeometry x="10.039999999999964" y="131" width="240.92" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-25" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="361" y="140" width="299" height="198" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-17" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-25">
+          <mxGeometry width="299" height="198" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-20" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Image Recognition&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;color: rgb(13, 13, 13); font-family: Söhne, ui-sans-serif, system-ui, -apple-system, &amp;quot;Segoe UI&amp;quot;, Roboto, Ubuntu, Cantarell, &amp;quot;Noto Sans&amp;quot;, sans-serif, &amp;quot;Helvetica Neue&amp;quot;, Arial, &amp;quot;Apple Color Emoji&amp;quot;, &amp;quot;Segoe UI Emoji&amp;quot;, &amp;quot;Segoe UI Symbol&amp;quot;, &amp;quot;Noto Color Emoji&amp;quot;; font-size: 16px; white-space-collapse: preserve;&quot;&gt;with TensorFlow Lite&lt;/span&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#CFDCF0;fillColor=#CFDCF0;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-25">
+          <mxGeometry x="10" y="32.003846153846155" width="279" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-21" value="Backend Processing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;opacity=0;align=left;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-25">
+          <mxGeometry x="9.5" y="12.996153846153845" width="130" height="10.384615384615385" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-22" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Flask Server for Request Handling&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#CFDCF0;fillColor=#CFDCF0;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-25">
+          <mxGeometry x="10" y="86.00384615384615" width="279" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-24" value="&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;RGB Recognition and&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Color Naming Process&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#CFDCF0;fillColor=#CFDCF0;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-25">
+          <mxGeometry x="9.5" y="141.00384615384615" width="279" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-26" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="736" y="100" width="299" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-31" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CFDCF0;strokeColor=#6c8ebf;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-26">
+          <mxGeometry width="299" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-32" value="&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;Recognition Results Database&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#BCC9DB;fillColor=#BCC9DB;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-26">
+          <mxGeometry x="10" y="90" width="279" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-34" value="&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;User Interaction Data Storage&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#BCC9DB;fillColor=#BCC9DB;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-26">
+          <mxGeometry x="10" y="30" width="279" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-35" value="&lt;div&gt;Data Handling and Storage&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;opacity=0;align=left;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-26">
+          <mxGeometry x="10" y="12" width="164" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="fjzCBuW7WAZlqsR-_4AA-27" value="" style="group" connectable="0" vertex="1" parent="1">
+          <mxGeometry x="736" y="290" width="299" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-45" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#BCC9DB;strokeColor=#6c8ebf;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-27">
+          <mxGeometry width="299" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-46" value="&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font face=&quot;Söhne, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif, Helvetica Neue, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji&quot; color=&quot;#0d0d0d&quot;&gt;&lt;span style=&quot;font-size: 16px; white-space-collapse: preserve;&quot;&gt;TTS Output&lt;/span&gt;&lt;/font&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=#DAE8FC;fillColor=#DAE8FC;strokeColor=#6c8ebf;align=center;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-27">
+          <mxGeometry x="10" y="29" width="279" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="t5MDqeNtydGqhWdQy3CR-48" value="Output" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;opacity=0;align=left;" vertex="1" parent="fjzCBuW7WAZlqsR-_4AA-27">
+          <mxGeometry x="10" y="8" width="70" height="10" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
