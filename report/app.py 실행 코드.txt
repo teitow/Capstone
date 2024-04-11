@@ -1,3 +1,0 @@
-cd C:\Users\admin\Desktop\project\report
-python app.py
-
