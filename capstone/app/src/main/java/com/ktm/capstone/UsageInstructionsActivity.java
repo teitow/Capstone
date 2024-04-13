@@ -1,4 +1,2 @@
-package com.ktm.capstone;
-
-public class UsageInstructionsActivity {
+package com.ktm.capstone;public class UsageInstructionsActivity {
 }
