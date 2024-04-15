@@ -2,6 +2,7 @@ package com.ktm.capstone;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.view.GestureDetector;
@@ -14,6 +15,7 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
     private FeaturesPagerAdapter adapter;
     private TextToSpeech tts;
     private GestureDetector gestureDetector;
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,26 +25,33 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
         viewPager = findViewById(R.id.viewPager);
         adapter = new FeaturesPagerAdapter(this);
         viewPager.setAdapter(adapter);
+        viewPager.setCurrentItem(0);  // Set initial item to the first one
 
-        // 페이지가 변경될 때마다 TTS로 현재 페이지의 기능 설명을 읽어줍니다.
         viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
-                readFeatureDescription(position);
+                readFeatureDescription(position % adapter.getCount());  // Use modulo to cycle descriptions
             }
         });
+
+        // Load TTS settings from SharedPreferences
+        prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE);
+        float savedPitch = prefs.getFloat("pitch", 1.0f);
+        float savedSpeed = prefs.getFloat("speed", 1.0f);
 
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(Locale.KOREAN);
+                tts.setPitch(savedPitch);  // Apply saved pitch
+                tts.setSpeechRate(savedSpeed);  // Apply saved speed
+                tts.speak("화면을 슬라이드 하거나 탭을 하세요.", TextToSpeech.QUEUE_FLUSH, null, "InitialInstruction");
             }
         });
 
         gestureDetector = new GestureDetector(this, this);
-        // 페이지를 스와이프 할 때와 탭 할 때 동일하게 처리하도록 설정
         viewPager.setOnTouchListener((v, event) -> {
             gestureDetector.onTouchEvent(event);
-            return false;  // ViewPager가 스와이프 동작을 정상 처리하도록 false 반환
+            return false;  // Allow the ViewPager to handle the swipe
         });
     }
 
@@ -55,19 +64,15 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
 
     @Override
     public boolean onSingleTapConfirmed(MotionEvent e) {
-        // 페이지가 변경될 때 자동으로 읽기 때문에 여기서는 추가적인 작업이 필요 없습니다.
+        int currentItem = viewPager.getCurrentItem();
+        viewPager.setCurrentItem((currentItem + 1) % adapter.getCount(), true);  // Move to the next item, wrap around
         return true;
     }
 
     @Override
     public boolean onDoubleTap(MotionEvent e) {
         int position = viewPager.getCurrentItem();
-        navigateToFeatureActivity(position);
-        return true;
-    }
-
-    private void navigateToFeatureActivity(int position) {
-        Intent intent;
+        Intent intent = null;
         switch (position) {
             case 0:
                 intent = new Intent(this, ObjectRecognitionActivity.class);
@@ -88,12 +93,16 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
                 intent = new Intent(this, VoiceSettingsActivity.class);
                 break;
             default:
-                return;
+                // Handle potential errors or invalid positions
+                break;
         }
-        startActivity(intent);
+
+        if (intent != null) {
+            startActivity(intent);
+        }
+        return true;
     }
 
-    // 필요한 GestureDetector의 다른 메소드들을 구현하세요.
     @Override
     public boolean onDown(MotionEvent e) {
         return true;
@@ -101,6 +110,18 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
 
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        if (Math.abs(velocityY) > Math.abs(velocityX)) {
+            if (velocityY > 0) {
+                viewPager.setCurrentItem((viewPager.getCurrentItem() + 1) % adapter.getCount(), true);
+            } else {
+                int targetIndex = (viewPager.getCurrentItem() - 1) % adapter.getCount();
+                if (targetIndex < 0) {
+                    targetIndex += adapter.getCount();
+                }
+                viewPager.setCurrentItem(targetIndex, true);
+            }
+            return true;
+        }
         return false;
     }
 

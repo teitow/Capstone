@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 카메라 인터넷 읽쓰 -->
+    <uses-feature android:name="android.hardware.camera" android:required="true"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="true"/>
+    <!-- 오토 포커스와 카메라 없으면 앱 설치 X -->
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -28,6 +37,16 @@
             android:exported="true"> <!-- No intent-filter here as it's not the direct entry point -->
         </activity>
 
-    </application>
+        <!-- VoiceSettingsActivity for adjusting TTS settings -->
+        <activity
+            android:name=".VoiceSettingsActivity"
+            android:exported="true"> <!-- As this activity might be started from other parts of the app -->
+        </activity>
 
+        <!-- TextToSpeechActivity for OCR and TTS features -->
+        <activity
+            android:name=".TextToSpeechActivity"
+            android:exported="true">
+        </activity>
+    </application>
 </manifest>

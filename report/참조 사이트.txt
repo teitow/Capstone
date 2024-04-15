@@ -16,8 +16,17 @@ https://jdroid.tistory.com/8
 
 스크린 터치 제스쳐 
 https://fluorite94.tistory.com/117
+https://dl137584.github.io/2022/02/11/015-viewpager-addonpagechangelistener/
+
 
 tts
 https://blog.naver.com/jogilsang/221587924913
+https://stackoverflow.com/questions/10480799/android-text-to-speech-select-dialog-only-once
 
+카메라권한
+https://velog.io/@xyunkyung/%EC%95%88%EB%93%9C%EB%A1%9C%EC%9D%B4%EB%93%9C-%EC%B9%B4%EB%A9%94%EB%9D%BC-%EA%B6%8C%ED%95%9C-%ED%97%88%EC%9A%A9%ED%95%98%EA%B8%B0
+
+바코드
+https://dev-memory.tistory.com/9
+https://tyeolrik.github.io/android/2017/12/05/Android-Barcode-Detector.html
 
