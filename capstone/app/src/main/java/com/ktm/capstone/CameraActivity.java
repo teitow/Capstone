@@ -2,7 +2,6 @@ package com.ktm.capstone;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
 
@@ -20,7 +19,8 @@ public class CameraActivity extends Activity {
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         } else {
-            finish(); // Close this activity if no camera app is available
+            setResult(Activity.RESULT_CANCELED);
+            finish();
         }
     }
 
@@ -30,10 +30,10 @@ public class CameraActivity extends Activity {
         if (requestCode == REQUEST_IMAGE_CAPTURE) {
             if (resultCode == RESULT_OK && data != null) {
                 Intent resultIntent = new Intent();
-                resultIntent.putExtras(data.getExtras());
-                setResult(RESULT_OK, resultIntent);
+                resultIntent.setData(data.getData());
+                setResult(Activity.RESULT_OK, resultIntent);
             } else {
-                setResult(RESULT_CANCELED);
+                setResult(Activity.RESULT_CANCELED);
             }
             finish();
         }

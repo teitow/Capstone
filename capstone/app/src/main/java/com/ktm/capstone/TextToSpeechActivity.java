@@ -1,140 +1,120 @@
 package com.ktm.capstone;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
-import android.util.SparseArray;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
+import com.googlecode.tesseract.android.TessBaseAPI;
 
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.text.TextBlock;
-import com.google.android.gms.vision.text.TextRecognizer;
-
+import java.io.File;
+import java.io.InputStream;
 import java.util.Locale;
 
-public class TextToSpeechActivity extends Activity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
-    private static final int REQUEST_IMAGE_CAPTURE = 1;
-    private static final int PERMISSION_REQUEST_CODE = 100;
+public class TextToSpeechActivity extends Activity {
     private TextToSpeech tts;
-    private TextRecognizer textRecognizer;
-    private GestureDetector gestureDetector;
+    private TessBaseAPI mTess;
+    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_to_speech);
 
-        gestureDetector = new GestureDetector(this, this);
-        initializeTextToSpeech();
-        initializeTextRecognizer();
+        imageUri = getIntent().getData();
+        initializeOCR();
+        initializeTTS();
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE);
+        if (imageUri != null) {
+            processImage(imageUri);
+        } else {
+            speak("처리할 이미지가 없습니다.", TextToSpeech.QUEUE_FLUSH);
         }
     }
 
-    private void initializeTextToSpeech() {
+    private void initializeOCR() {
+        String datapath = getFilesDir() + "/tesseract/";
+        File tessdata = new File(datapath + "tessdata/");
+        if (!tessdata.exists() && !tessdata.mkdirs()) {
+            speak("테스데이터 디렉토리 생성 오류.", TextToSpeech.QUEUE_ADD);
+            return;
+        }
+
+        copyTessDataFiles(tessdata);
+
+        mTess = new TessBaseAPI();
+        if (!mTess.init(datapath, "kor+eng")) {
+            speak("OCR 엔진 초기화 실패.", TextToSpeech.QUEUE_ADD);
+        }
+    }
+
+    private void copyTessDataFiles(File tessdata) {
+        try {
+            String[] files = getAssets().list("tessdata");
+            for (String fileName : files) {
+                File tessFile = new File(tessdata, fileName);
+                if (!tessFile.exists()) {
+                    InputStream in = getAssets().open("tessdata/" + fileName);
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(tessFile);
+
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) > 0) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                    out.close();
+                    in.close();
+                }
+            }
+        } catch (Exception e) {
+            speak("테스데이터 파일 복사 실패.", TextToSpeech.QUEUE_ADD);
+        }
+    }
+
+    private void initializeTTS() {
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                tts.setLanguage(Locale.KOREAN);
-                tts.speak("화면을 두 번 눌러 카메라를 시작하세요. 사진을 찍으면 텍스트를 읽어드립니다.", TextToSpeech.QUEUE_FLUSH, null, null);
+                int result = tts.setLanguage(Locale.KOREAN);
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    speak("한국어 TTS가 지원되지 않습니다. 영어로 전환합니다.", TextToSpeech.QUEUE_FLUSH);
+                    tts.setLanguage(Locale.US);
+                }
+                updateTTS();
+            } else {
+                speak("텍스트 음성 변환 엔진 초기화 실패.", TextToSpeech.QUEUE_FLUSH);
             }
         });
     }
 
-    private void initializeTextRecognizer() {
-        textRecognizer = new TextRecognizer.Builder(getApplicationContext()).build();
+    private void updateTTS() {
+        float pitch = getSharedPreferences("TTSConfig", MODE_PRIVATE).getFloat("pitch", 1.0f);
+        float speed = getSharedPreferences("TTSConfig", MODE_PRIVATE).getFloat("speed", 1.0f);
+        tts.setPitch(pitch);
+        tts.setSpeechRate(speed);
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event);
-    }
-
-    @Override
-    public boolean onSingleTapConfirmed(MotionEvent e) {
-        return false;
-    }
-
-    @Override
-    public boolean onDoubleTap(MotionEvent e) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            dispatchTakePictureIntent();
-        }
-        return true;
-    }
-
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent e) {
-        return true;
-    }
-
-    private void dispatchTakePictureIntent() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+    private void processImage(Uri imageUri) {
+        try {
+            InputStream imageStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
+            if (bitmap != null) {
+                mTess.setImage(bitmap);
+                final String extractedText = mTess.getUTF8Text();
+                speak(extractedText.isEmpty() ? "이미지 내 텍스트를 찾을 수 없습니다." : extractedText, TextToSpeech.QUEUE_FLUSH);
+            } else {
+                speak("이미지 로드 실패.", TextToSpeech.QUEUE_FLUSH);
+            }
+        } catch (Exception e) {
+            speak("이미지 처리 오류.", TextToSpeech.QUEUE_FLUSH);
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            readTextFromImage(imageBitmap);
+    private void speak(String text, int queueMode) {
+        if (tts != null) {
+            tts.speak(text, queueMode, null, null);
         }
-    }
-
-    private void readTextFromImage(Bitmap image) {
-        Frame frame = new Frame.Builder().setBitmap(image).build();
-        SparseArray<TextBlock> items = textRecognizer.detect(frame);
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < items.size(); i++) {
-            TextBlock item = items.valueAt(i);
-            stringBuilder.append(item.getValue()).append("\n");
-        }
-
-        if (stringBuilder.length() == 0) {
-            tts.speak("감지된 텍스트가 없습니다. 다시 시도해주세요.", TextToSpeech.QUEUE_FLUSH, null, null);
-        } else {
-            tts.speak("감지된 텍스트는 다음과 같습니다: " + stringBuilder, TextToSpeech.QUEUE_FLUSH, null, null);
-        }
-    }
-
-    @Override
-    public boolean onDown(MotionEvent e) {
-        return true;
-    }
-
-    @Override
-    public void onShowPress(MotionEvent e) {}
-
-    @Override
-    public boolean onSingleTapUp(MotionEvent e) {
-        return true;
-    }
-
-    @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-        return false;
-    }
-
-    @Override
-    public void onLongPress(MotionEvent e) {}
-
-    @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        return false;
     }
 
     @Override
@@ -143,8 +123,8 @@ public class TextToSpeechActivity extends Activity implements GestureDetector.On
             tts.stop();
             tts.shutdown();
         }
-        if (textRecognizer != null) {
-            textRecognizer.release();
+        if (mTess != null) {
+            mTess.end();
         }
         super.onDestroy();
     }
