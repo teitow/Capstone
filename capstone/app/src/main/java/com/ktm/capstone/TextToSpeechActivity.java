@@ -3,19 +3,20 @@ package com.ktm.capstone;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import java.io.IOException;
+import java.util.Locale;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Locale;
-
-public class TextToSpeechActivity extends Activity {
+public class TextToSpeechActivity extends Activity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
     private TextToSpeech tts;
-    private TessBaseAPI mTess;
+    private GestureDetector gestureDetector;
+    private TessBaseAPI tessBaseAPI;
     private Uri imageUri;
 
     @Override
@@ -23,109 +24,74 @@ public class TextToSpeechActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_to_speech);
 
-        imageUri = getIntent().getData();
-        initializeOCR();
-        initializeTTS();
+        gestureDetector = new GestureDetector(this, this);
+        tessBaseAPI = new TessBaseAPI();
+        tessBaseAPI.init(getFilesDir() + "/tesseract/", "kor+eng");
 
-        if (imageUri != null) {
-            processImage(imageUri);
-        } else {
-            speak("처리할 이미지가 없습니다.", TextToSpeech.QUEUE_FLUSH);
-        }
-    }
-
-    private void initializeOCR() {
-        String datapath = getFilesDir() + "/tesseract/";
-        File tessdata = new File(datapath + "tessdata/");
-        if (!tessdata.exists() && !tessdata.mkdirs()) {
-            speak("테스데이터 디렉토리 생성 오류.", TextToSpeech.QUEUE_ADD);
-            return;
-        }
-
-        copyTessDataFiles(tessdata);
-
-        mTess = new TessBaseAPI();
-        if (!mTess.init(datapath, "kor+eng")) {
-            speak("OCR 엔진 초기화 실패.", TextToSpeech.QUEUE_ADD);
-        }
-    }
-
-    private void copyTessDataFiles(File tessdata) {
-        try {
-            String[] files = getAssets().list("tessdata");
-            for (String fileName : files) {
-                File tessFile = new File(tessdata, fileName);
-                if (!tessFile.exists()) {
-                    InputStream in = getAssets().open("tessdata/" + fileName);
-                    java.io.FileOutputStream out = new java.io.FileOutputStream(tessFile);
-
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = in.read(buffer)) > 0) {
-                        out.write(buffer, 0, bytesRead);
-                    }
-                    out.close();
-                    in.close();
-                }
-            }
-        } catch (Exception e) {
-            speak("테스데이터 파일 복사 실패.", TextToSpeech.QUEUE_ADD);
-        }
-    }
-
-    private void initializeTTS() {
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                int result = tts.setLanguage(Locale.KOREAN);
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    speak("한국어 TTS가 지원되지 않습니다. 영어로 전환합니다.", TextToSpeech.QUEUE_FLUSH);
-                    tts.setLanguage(Locale.US);
-                }
-                updateTTS();
-            } else {
-                speak("텍스트 음성 변환 엔진 초기화 실패.", TextToSpeech.QUEUE_FLUSH);
+                tts.setLanguage(Locale.KOREAN);
             }
         });
-    }
 
-    private void updateTTS() {
-        float pitch = getSharedPreferences("TTSConfig", MODE_PRIVATE).getFloat("pitch", 1.0f);
-        float speed = getSharedPreferences("TTSConfig", MODE_PRIVATE).getFloat("speed", 1.0f);
-        tts.setPitch(pitch);
-        tts.setSpeechRate(speed);
-    }
-
-    private void processImage(Uri imageUri) {
-        try {
-            InputStream imageStream = getContentResolver().openInputStream(imageUri);
-            Bitmap bitmap = BitmapFactory.decodeStream(imageStream);
-            if (bitmap != null) {
-                mTess.setImage(bitmap);
-                final String extractedText = mTess.getUTF8Text();
-                speak(extractedText.isEmpty() ? "이미지 내 텍스트를 찾을 수 없습니다." : extractedText, TextToSpeech.QUEUE_FLUSH);
-            } else {
-                speak("이미지 로드 실패.", TextToSpeech.QUEUE_FLUSH);
+        imageUri = getIntent().getParcelableExtra("data");
+        if (imageUri != null) {
+            try {
+                processImage(imageUri);
+            } catch (IOException e) {
+                tts.speak("이미지를 처리하는 중 오류가 발생했습니다.", TextToSpeech.QUEUE_FLUSH, null, null);
             }
-        } catch (Exception e) {
-            speak("이미지 처리 오류.", TextToSpeech.QUEUE_FLUSH);
+        } else {
+            tts.speak("이미지 데이터를 받지 못했습니다.", TextToSpeech.QUEUE_FLUSH, null, null);
         }
     }
 
-    private void speak(String text, int queueMode) {
-        if (tts != null) {
-            tts.speak(text, queueMode, null, null);
+    private void processImage(Uri uri) throws IOException {
+        Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
+        tessBaseAPI.setImage(bitmap);
+        String extractedText = tessBaseAPI.getUTF8Text();
+
+        if (extractedText.isEmpty()) {
+            tts.speak("문자가 없습니다. 다시 카메라를 찍고 싶으면 화면을 두 번 눌러주세요.", TextToSpeech.QUEUE_FLUSH, null, null);
+        } else {
+            tts.speak(extractedText, TextToSpeech.QUEUE_FLUSH, null, null);
         }
     }
 
     @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        if (mTess != null) {
-            mTess.end();
-        }
-        super.onDestroy();
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event);
     }
+
+    @Override
+    public boolean onDoubleTap(MotionEvent e) {
+        Intent intent = new Intent(this, CameraActivity.class);
+        startActivity(intent);
+        return true;
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        if (Math.abs(velocityY) > Math.abs(velocityX)) {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onDown(MotionEvent e) { return true; }
+    @Override
+    public void onLongPress(MotionEvent e) {}
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) { return false; }
+    @Override
+    public void onShowPress(MotionEvent e) {}
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) { return false; }
+    @Override
+    public boolean onSingleTapConfirmed(MotionEvent e) { return false; }
+    @Override
+    public boolean onDoubleTapEvent(MotionEvent e) { return false; }
 }

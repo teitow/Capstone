@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">capstone</string>
+    <string name="app_name">비전토크</string>
+    <string name="camera_preview">카메라 프리뷰</string>
+    <string name="instruction_camera_click">화면을 터치하여 사진 찍기</string>
 </resources>

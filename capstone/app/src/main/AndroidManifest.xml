@@ -7,10 +7,9 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- 카메라 인터넷 읽쓰 -->
+
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="true"/>
-    <!-- 오토 포커스와 카메라 없으면 앱 설치 X -->
 
     <application
         android:allowBackup="true"
@@ -22,31 +21,47 @@
         android:theme="@style/Theme.Capstone"
         tools:targetApi="31">
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- SplashActivity which is the entry point of the app -->
         <activity
             android:name=".SplashActivity"
-            android:exported="true"> <!-- Make sure to set android:exported="true" for apps targeting Android 12 and above -->
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
         <!-- MainActivity which will be started from SplashActivity -->
         <activity
             android:name=".MainActivity"
-            android:exported="true"> <!-- No intent-filter here as it's not the direct entry point -->
+            android:exported="true">
         </activity>
 
         <!-- VoiceSettingsActivity for adjusting TTS settings -->
         <activity
             android:name=".VoiceSettingsActivity"
-            android:exported="true"> <!-- As this activity might be started from other parts of the app -->
+            android:exported="true">
         </activity>
 
         <!-- TextToSpeechActivity for OCR and TTS features -->
         <activity
             android:name=".TextToSpeechActivity"
+            android:exported="true">
+        </activity>
+
+        <!-- CameraActivity for taking pictures -->
+        <activity
+            android:name=".CameraActivity"
             android:exported="true">
         </activity>
     </application>
