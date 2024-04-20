@@ -1,97 +1,155 @@
 package com.ktm.capstone;
 
-import android.app.Activity;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.net.Uri;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import java.io.IOException;
-import java.util.Locale;
-import com.googlecode.tesseract.android.TessBaseAPI;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
 
-public class TextToSpeechActivity extends Activity implements GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.TextRecognizer;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+
+public class TextToSpeechActivity extends AppCompatActivity implements TextToSpeech.OnInitListener {
     private TextToSpeech tts;
+    private Camera camera;
+    private Preview preview;
+    private ImageCapture imageCapture;
+    private TextRecognizer textRecognizer;
+    private PreviewView viewFinder;
     private GestureDetector gestureDetector;
-    private TessBaseAPI tessBaseAPI;
-    private Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_to_speech);
 
-        gestureDetector = new GestureDetector(this, this);
-        tessBaseAPI = new TessBaseAPI();
-        tessBaseAPI.init(getFilesDir() + "/tesseract/", "kor+eng");
-
-        tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                tts.setLanguage(Locale.KOREAN);
-            }
-        });
-
-        imageUri = getIntent().getParcelableExtra("data");
-        if (imageUri != null) {
-            try {
-                processImage(imageUri);
-            } catch (IOException e) {
-                tts.speak("이미지를 처리하는 중 오류가 발생했습니다.", TextToSpeech.QUEUE_FLUSH, null, null);
-            }
+        if (allPermissionsGranted()) {
+            viewFinder = findViewById(R.id.viewFinder);
+            tts = new TextToSpeech(this, this);
+            textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+            gestureDetector = new GestureDetector(this, new GestureListener());
+            startCamera();
         } else {
-            tts.speak("이미지 데이터를 받지 못했습니다.", TextToSpeech.QUEUE_FLUSH, null, null);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}, 101);
         }
     }
 
-    private void processImage(Uri uri) throws IOException {
-        Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
-        tessBaseAPI.setImage(bitmap);
-        String extractedText = tessBaseAPI.getUTF8Text();
+    private boolean allPermissionsGranted() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    }
 
-        if (extractedText.isEmpty()) {
-            tts.speak("문자가 없습니다. 다시 카메라를 찍고 싶으면 화면을 두 번 눌러주세요.", TextToSpeech.QUEUE_FLUSH, null, null);
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                preview = new Preview.Builder().build();
+                imageCapture = new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).build();
+
+                CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+                cameraProvider.unbindAll();
+                camera = cameraProvider.bindToLifecycle((LifecycleOwner) this, cameraSelector, preview, imageCapture);
+                preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+
+            } catch (ExecutionException | InterruptedException e) {
+                Log.e("CameraXApp", "Use case binding failed", e);
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(Locale.KOREAN);
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "Language not supported");
+            } else {
+                tts.speak("사진을 찍어주세요.", TextToSpeech.QUEUE_FLUSH, null, "TTS1");
+            }
         } else {
-            tts.speak(extractedText, TextToSpeech.QUEUE_FLUSH, null, null);
+            Log.e("TTS", "Initialization failed");
         }
+    }
+
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onDoubleTap(MotionEvent e) {
+            captureAndAnalyze();
+            return super.onDoubleTap(e);
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            if (Math.abs(e2.getY() - e1.getY()) > 100 && Math.abs(velocityY) > 100) {
+                finish();  // Finish activity to return to MainActivity
+            }
+            return super.onFling(e1, e2, velocityX, velocityY);
+        }
+    }
+
+    private void captureAndAnalyze() {
+        ImageCapture.OutputFileOptions options = new ImageCapture.OutputFileOptions.Builder().build();
+        imageCapture.takePicture(options, ContextCompat.getMainExecutor(this), new ImageCapture.OnImageCapturedCallback() {
+            @Override
+            public void onCaptureSuccess(@NonNull ImageProxy image) {
+                InputImage inputImage = InputImage.fromMediaImage(image.getImage(), image.getImageInfo().getRotationDegrees());
+                textRecognizer.process(inputImage)
+                        .addOnSuccessListener(visionText -> {
+                            if (visionText.getText().trim().isEmpty()) {
+                                tts.speak("문자가 없습니다. 다시 찍으려면 화면을 두 번 누르세요.", TextToSpeech.QUEUE_FLUSH, null, "TTS2");
+                            } else {
+                                tts.speak(visionText.getText(), TextToSpeech.QUEUE_FLUSH, null, "TTS3");
+                            }
+                            image.close();
+                        })
+                        .addOnFailureListener(e -> {
+                            tts.speak("오류가 발생했습니다. 다시 시도해주세요.", TextToSpeech.QUEUE_FLUSH, null, "TTS4");
+                            image.close();
+                        });
+            }
+
+            @Override
+            public void onError(@NonNull ImageCaptureException exception) {
+                tts.speak("사진 촬영에 실패했습니다.", TextToSpeech.QUEUE_FLUSH, null, "TTS5");
+            }
+        });
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return gestureDetector.onTouchEvent(event);
+        gestureDetector.onTouchEvent(event);
+        return super.onTouchEvent(event);
     }
 
     @Override
-    public boolean onDoubleTap(MotionEvent e) {
-        Intent intent = new Intent(this, CameraActivity.class);
-        startActivity(intent);
-        return true;
-    }
-
-    @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-        if (Math.abs(velocityY) > Math.abs(velocityX)) {
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            return true;
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
         }
-        return false;
+        super.onDestroy();
     }
-
-    @Override
-    public boolean onDown(MotionEvent e) { return true; }
-    @Override
-    public void onLongPress(MotionEvent e) {}
-    @Override
-    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) { return false; }
-    @Override
-    public void onShowPress(MotionEvent e) {}
-    @Override
-    public boolean onSingleTapUp(MotionEvent e) { return false; }
-    @Override
-    public boolean onSingleTapConfirmed(MotionEvent e) { return false; }
-    @Override
-    public boolean onDoubleTapEvent(MotionEvent e) { return false; }
 }
