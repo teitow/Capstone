@@ -14,15 +14,15 @@ public class FeaturesPagerAdapter extends PagerAdapter {
             R.drawable.text_to_speech,
             R.drawable.money_recognition,
             R.drawable.barcode_recognition,
-            R.drawable.how_to_use,
+            R.drawable.color_recognition,
             R.drawable.voice_config
     };
     private String[] descriptions = new String[] {
-            "객체인식",
+            "객체 인식",
             "텍스트 음성 변환",
             "지폐 인식",
             "바코드 인식",
-            "앱 사용법 음성 안내",
+            "색상 인식",
             "음성 응답의 속도나 톤 조절 기능"
     };
 

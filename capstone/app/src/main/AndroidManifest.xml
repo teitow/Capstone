@@ -60,6 +60,10 @@
             android:exported="true">
         </activity>
 
-        <!-- CameraActivity for taking pictures -->
+        <activity
+            android:name=".ColorRecognitionActivity"
+            android:exported="true">
+        </activity>
+
     </application>
 </manifest>

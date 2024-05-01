@@ -87,7 +87,7 @@ public class MainActivity extends Activity implements GestureDetector.OnGestureL
                 intent = new Intent(this, BarcodeRecognitionActivity.class);
                 break;
             case 4:
-                intent = new Intent(this, UsageInstructionsActivity.class);
+                intent = new Intent(this, ColorRecognitionActivity.class);
                 break;
             case 5:
                 intent = new Intent(this, VoiceSettingsActivity.class);
