@@ -7,7 +7,8 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.2' // 사용 중인 Gradle 버전에 맞추어 변경 필요
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0" // 사용 중인 Kotlin 버전에 맞추어 변경 필요
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.0-RC2'
+        // 사용 중인 Kotlin 버전에 맞추어 변경 필요
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
