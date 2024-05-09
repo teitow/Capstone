@@ -1,6 +1,6 @@
 # 비전토크 (VisionTalk)
 
-![비전토크 로고](backup/icon/splash_screen.png)
+<img src="C:\Users\admin\Desktop\project\backup\icon\splash_screen.png" alt="비전토크 로고" width="300"/>
 
 ## 소개
 **비전토크**는 시각 장애인과 읽기 장애가 있는 사용자를 위해 개발된 안드로이드 앱입니다. 사용자가 촬영한 사진에서 객체를 인식하고, 색상을 식별하며, 텍스트를 읽어 오디오 설명을 제공함으로써 주변 세계에 대한 이해를 높이고자 합니다.
