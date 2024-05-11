@@ -65,5 +65,9 @@
             android:exported="true">
         </activity>
 
+        <activity
+            android:name=".ObjectRecognitionActivity">
+        </activity>
+
     </application>
 </manifest>

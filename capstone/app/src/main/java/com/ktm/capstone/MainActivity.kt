@@ -16,34 +16,37 @@ import kotlin.math.abs
 
 class MainActivity : Activity(), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
-    private var viewPager: ViewPager? = null
-    private var adapter: FeaturesPagerAdapter? = null
+    private lateinit var viewPager: ViewPager
+    private lateinit var adapter: FeaturesPagerAdapter
     private var tts: TextToSpeech? = null
-    private var gestureDetector: GestureDetector? = null
+    private lateinit var gestureDetector: GestureDetector
     private var prefs: SharedPreferences? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         viewPager = findViewById(R.id.viewPager)
         adapter = FeaturesPagerAdapter(this)
-        viewPager.setAdapter(adapter)
-        viewPager.setCurrentItem(0) // Set initial item to the first one
+        viewPager.adapter = adapter
+        viewPager.currentItem = 0 // Set initial item to the first one
         viewPager.addOnPageChangeListener(object : SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
-                readFeatureDescription(position % adapter!!.count) // Use modulo to cycle descriptions
+                readFeatureDescription(position % adapter.count) // Use modulo to cycle descriptions
             }
         })
 
         // Load TTS settings from SharedPreferences
         prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
-        val savedPitch = prefs.getFloat("pitch", 1.0f)
-        val savedSpeed = prefs.getFloat("speed", 1.0f)
+        val savedPitch = prefs?.getFloat("pitch", 1.0f) ?: 1.0f
+        val savedSpeed = prefs?.getFloat("speed", 1.0f) ?: 1.0f
+
         tts = TextToSpeech(this) { status: Int ->
             if (status == TextToSpeech.SUCCESS) {
-                tts!!.setLanguage(Locale.KOREAN)
-                tts!!.setPitch(savedPitch) // Apply saved pitch
-                tts!!.setSpeechRate(savedSpeed) // Apply saved speed
-                tts!!.speak(
+                tts?.setLanguage(Locale.KOREAN)
+                tts?.setPitch(savedPitch) // Apply saved pitch
+                tts?.setSpeechRate(savedSpeed) // Apply saved speed
+                tts?.speak(
                     "화면을 슬라이드 하거나 탭을 하세요.",
                     TextToSpeech.QUEUE_FLUSH,
                     null,
@@ -51,31 +54,29 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
                 )
             }
         }
+
         gestureDetector = GestureDetector(this, this)
-        viewPager.setOnTouchListener(OnTouchListener { v: View?, event: MotionEvent? ->
-            gestureDetector!!.onTouchEvent(event!!)
+        viewPager.setOnTouchListener(OnTouchListener { _, event: MotionEvent? ->
+            gestureDetector.onTouchEvent(event!!)
             false // Allow the ViewPager to handle the swipe
         })
     }
 
     private fun readFeatureDescription(position: Int) {
-        if (tts != null && adapter != null) {
-            val description = adapter!!.getDescription(position)
+        if (tts != null) {
+            val description = adapter.getDescription(position)
             tts!!.speak(description, TextToSpeech.QUEUE_FLUSH, null, "FeatureDescription")
         }
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        val currentItem = viewPager!!.currentItem
-        viewPager!!.setCurrentItem(
-            (currentItem + 1) % adapter!!.count,
-            true
-        ) // Move to the next item, wrap around
+        val currentItem = viewPager.currentItem
+        viewPager.setCurrentItem((currentItem + 1) % adapter.count, true) // Move to the next item, wrap around
         return true
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        val position = viewPager!!.currentItem
+        val position = viewPager.currentItem
         var intent: Intent? = null
         when (position) {
             0 -> intent = Intent(this, ObjectRecognitionActivity::class.java)
@@ -84,7 +85,6 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
             3 -> intent = Intent(this, BarcodeRecognitionActivity::class.java)
             4 -> intent = Intent(this, ColorRecognitionActivity::class.java)
             5 -> intent = Intent(this, VoiceSettingsActivity::class.java)
-            else -> {}
         }
         intent?.let { startActivity(it) }
         return true
@@ -102,13 +102,13 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
     ): Boolean {
         if (abs(velocityY.toDouble()) > abs(velocityX.toDouble())) {
             if (velocityY > 0) {
-                viewPager!!.setCurrentItem((viewPager!!.currentItem + 1) % adapter!!.count, true)
+                viewPager.setCurrentItem((viewPager.currentItem + 1) % adapter.count, true)
             } else {
-                var targetIndex = (viewPager!!.currentItem - 1) % adapter!!.count
+                var targetIndex = (viewPager.currentItem - 1) % adapter.count
                 if (targetIndex < 0) {
-                    targetIndex += adapter!!.count
+                    targetIndex += adapter.count
                 }
-                viewPager!!.setCurrentItem(targetIndex, true)
+                viewPager.setCurrentItem(targetIndex, true)
             }
             return true
         }

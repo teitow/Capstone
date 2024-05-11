@@ -7,7 +7,7 @@ import io
 app = Flask(__name__)
 
 # TensorFlow Lite 모델 로드
-interpreter = tf.lite.Interpreter(model_path="C:\\Users\\admin\\Desktop\\project\\COCO YOLOv5 tensorflow lite model\\yolov5.tflite")
+interpreter = tf.lite.Interpreter(model_path="yolov5.tflite")
 interpreter.allocate_tensors()
 
 # 입력 및 출력 텐서 정보 가져오기
@@ -76,4 +76,4 @@ def detect_objects():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

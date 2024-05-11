@@ -37,19 +37,20 @@ import kotlin.math.abs
 class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
     private var tts: TextToSpeech? = null
     private var camera: Camera? = null
-    private var preview: Preview? = null
-    private var imageCapture: ImageCapture? = null
+    private lateinit var preview: Preview
+    private lateinit var imageCapture: ImageCapture
     private var isTTSInitialized = false
     private var cameraClickSound: MediaPlayer? = null
-    private var imageView: ImageView? = null
-    private var gestureDetector: GestureDetector? = null
+    private lateinit var imageView: ImageView
+    private lateinit var gestureDetector: GestureDetector
     private var yStart = 0f
     private var isImageDisplayed = false
-    private var cameraProvider: ProcessCameraProvider? = null
-    private var cameraSelector: CameraSelector? = null
+    private lateinit var cameraProvider: ProcessCameraProvider
+    private lateinit var cameraSelector: CameraSelector
+
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts!!.setLanguage(Locale.KOREAN)
+            val result = tts?.setLanguage(Locale.KOREAN)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TTS", "Korean language is not supported.")
             } else {
@@ -88,13 +89,13 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
                 cameraProvider = cameraProviderFuture.get()
                 preview = Preview.Builder().build()
                 val viewFinder = findViewById<PreviewView>(R.id.viewFinder)
-                preview!!.setSurfaceProvider(viewFinder.getSurfaceProvider())
+                preview.setSurfaceProvider(viewFinder.surfaceProvider)
                 imageCapture = ImageCapture.Builder().build()
                 cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
                 cameraProvider.unbindAll()
                 camera = cameraProvider.bindToLifecycle(
                     (this as LifecycleOwner),
-                    cameraSelector!!,
+                    cameraSelector,
                     preview,
                     imageCapture
                 )
@@ -107,14 +108,14 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
     }
 
     private fun setupTTS() {
-        tts!!.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String) {
                 // Nothing to do here
             }
 
             override fun onDone(utteranceId: String) {
                 if ("COLOR_DETECTED" == utteranceId) {
-                    tts!!.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
+                    tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
                     speak(
                         "색상을 다시 인식하려면 화면을 두 번 탭하세요. 메인 화면으로 돌아가려면 화면을 상하로 슬라이드하세요.",
                         "ID_GUIDANCE"
@@ -130,24 +131,24 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
 
     private fun speak(text: String, utteranceId: String) {
         if (isTTSInitialized) {
-            tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
         }
     }
 
     private fun captureAndAnalyze() {
-        imageView!!.visibility = View.GONE
+        imageView.visibility = View.GONE
         val fileName = "pic_" + System.currentTimeMillis() + ".jpg"
         val photoFile = File(getExternalFilesDir(null), fileName)
         val options = OutputFileOptions.Builder(photoFile).build()
-        imageCapture!!.takePicture(
+        imageCapture.takePicture(
             options,
             ContextCompat.getMainExecutor(this),
             object : OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: OutputFileResults) {
-                    cameraClickSound!!.start()
+                    cameraClickSound?.start()
                     val savedUri = Uri.fromFile(photoFile)
-                    imageView!!.setImageURI(savedUri)
-                    imageView!!.visibility = View.VISIBLE
+                    imageView.setImageURI(savedUri)
+                    imageView.visibility = View.VISIBLE
                     isImageDisplayed = true
                     Log.d("CameraXApp", "Photo saved successfully: $savedUri")
                     analyzeColor(savedUri)
@@ -197,27 +198,27 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
     }
 
     private fun resetToInitialView() {
-        imageView!!.visibility = View.GONE
+        imageView.visibility = View.GONE
         isImageDisplayed = false
         startCameraPreview()
         speak("초기 화면으로 돌아갑니다.", "ID_RESET")
     }
 
     private fun startCameraPreview() {
-        cameraProvider!!.unbindAll()
-        camera = cameraProvider!!.bindToLifecycle(
+        cameraProvider.unbindAll()
+        camera = cameraProvider.bindToLifecycle(
             (this as LifecycleOwner),
-            cameraSelector!!,
+            cameraSelector,
             preview,
             imageCapture
         )
         val viewFinder = findViewById<PreviewView>(R.id.viewFinder)
-        preview!!.setSurfaceProvider(viewFinder.getSurfaceProvider())
+        preview.setSurfaceProvider(viewFinder.surfaceProvider)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        gestureDetector!!.onTouchEvent(event)
-        val action = event.actionMasked // 여기를 수정하였습니다.
+        gestureDetector.onTouchEvent(event)
+        val action = event.actionMasked
         if (action == MotionEvent.ACTION_DOWN) {
             yStart = event.y
         } else if (action == MotionEvent.ACTION_UP) {

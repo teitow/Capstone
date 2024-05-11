@@ -51,4 +51,11 @@ dependencies {
     implementation 'androidx.camera:camera-view:1.4.0-alpha05'
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
+    // OkHttp3
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okio:okio:3.0.0'
+
+    // JSON 처리
+    implementation 'org.json:json:20211205'
+
 }
