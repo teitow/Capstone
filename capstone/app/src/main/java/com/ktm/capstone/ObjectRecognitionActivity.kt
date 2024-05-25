@@ -18,9 +18,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.cloud.vision.v1.*
-import com.google.protobuf.ByteString
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
@@ -163,7 +160,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                     imageView?.visibility = View.VISIBLE
                     isImageDisplayed = true
                     Log.d("CameraXApp", "Photo saved successfully: $savedUri")
-                    analyzeImageWithCloudVision(photoFile)
+                    analyzeImageWithAzure(photoFile)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -173,97 +170,54 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
             })
     }
 
-    private fun analyzeImageWithCloudVision(photoFile: File) {
-        try {
-            val inputStream = FileInputStream(photoFile)
-            val imageBytes = ByteString.readFrom(inputStream)
-            val image = Image.newBuilder().setContent(imageBytes).build()
-
-            val feature = Feature.newBuilder().setType(Feature.Type.LABEL_DETECTION).build()
-            val request = AnnotateImageRequest.newBuilder().addFeatures(feature).setImage(image).build()
-            val requests = listOf(request)
-
-            val credentialsStream = resources.openRawResource(R.raw.service_account_key)
-            val credentials = GoogleCredentials.fromStream(credentialsStream)
-            val settings = ImageAnnotatorSettings.newBuilder().setCredentialsProvider { credentials }.build()
-            val client = ImageAnnotatorClient.create(settings)
-
-            val response = client.batchAnnotateImages(requests)
-            val labelAnnotations = response.responsesList[0].labelAnnotationsList
-
-            if (labelAnnotations.isEmpty()) {
-                speak("이미지에서 상황을 감지할 수 없습니다. 다시 시도해 주세요.", "ID_ERROR")
-            } else {
-                val descriptions = labelAnnotations.joinToString(", ") { it.description }
-                ocrTextView?.text = descriptions
-                ocrTextView?.visibility = View.VISIBLE
-                generateDescription(descriptions)
-            }
-        } catch (e: IOException) {
-            Log.e("CloudVision", "Failed to analyze image: " + e.message, e)
-            speak("이미지 분석에 실패했습니다.", "ID_ERROR")
-        }
+    private fun getEnvVariable(key: String): String {
+        return BuildConfig::class.java.getField(key).get(null) as String
     }
 
-    private fun generateDescription(labels: String) {
-        val apiKey = ""  // API 키 설정
+    private fun analyzeImageWithAzure(photoFile: File) {
+        val apiKey = getEnvVariable("AZURE_VISION_API_KEY")
+        val endpoint = getEnvVariable("AZURE_VISION_ENDPOINT")
+
         val client = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        val json = JSONObject().apply {
-            put("model", "gpt-3.5-turbo")  // 최신 모델로 변경
-            put("messages", JSONArray().apply {
-                put(JSONObject().apply {
-                    put("role", "system")
-                    put("content", "You are a helpful assistant that describes scenes in Korean based on given labels.")
-                })
-                put(JSONObject().apply {
-                    put("role", "user")
-                    put("content", "다음 라벨들을 사용하여 이 사진이 묘사하는 내용을 한 문장으로 간략하게 설명해 주세요: $labels")
-                })
-            })
-        }
-
-
-        val requestBody = json.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        val mediaType = "application/octet-stream".toMediaTypeOrNull()
+        val requestBody = RequestBody.create(mediaType, photoFile)
 
         val request = Request.Builder()
-            .url("https://api.openai.com/v1/chat/completions")
-            .addHeader("Authorization", "Bearer $apiKey")
+            .url("$endpoint/vision/v3.1/describe")
+            .addHeader("Ocp-Apim-Subscription-Key", apiKey)
             .post(requestBody)
             .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("ChatGPT", "Failed to get response from ChatGPT API", e)
-                speak("문장 생성에 실패했습니다.", "ID_ERROR")
+                Log.e("AzureVision", "Failed to get response from Azure Vision API", e)
+                speak("이미지 분석에 실패했습니다.", "ID_ERROR")
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.body?.string()?.let { responseBody ->
-                    Log.d("ChatGPT Response", responseBody)  // 응답 전체를 로그에 출력
+                    Log.d("AzureVision Response", responseBody)
                     try {
                         val jsonResponse = JSONObject(responseBody)
-                        if (jsonResponse.has("choices")) {
-                            val generatedText = jsonResponse
-                                .getJSONArray("choices")
+                        if (jsonResponse.has("description")) {
+                            val descriptions = jsonResponse
+                                .getJSONObject("description")
+                                .getJSONArray("captions")
                                 .getJSONObject(0)
-                                .getJSONObject("message")
-                                .getString("content")
-                                .trim()
+                                .getString("text")
 
-                            runOnUiThread {
-                                speak(generatedText, "ID_TEXT_READ")
-                            }
+                            translateAndSpeak(descriptions)
                         } else {
-                            Log.e("ChatGPT", "No choices found in response")
+                            Log.e("AzureVision", "No description found in response")
                             speak("문장 생성에 실패했습니다.", "ID_ERROR")
                         }
                     } catch (e: JSONException) {
-                        Log.e("ChatGPT", "Failed to parse response from ChatGPT API", e)
+                        Log.e("AzureVision", "Failed to parse response from Azure Vision API", e)
                         speak("문장 생성에 실패했습니다.", "ID_ERROR")
                     }
                 } ?: run {
@@ -273,6 +227,55 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         })
     }
 
+    private fun translateAndSpeak(text: String) {
+        val translateApiKey = getEnvVariable("AZURE_TRANSLATE_API_KEY")
+        val translateEndpoint = getEnvVariable("AZURE_TRANSLATE_ENDPOINT")
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        val json = JSONArray().put(JSONObject().put("Text", text)).toString()
+        val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+
+        val request = Request.Builder()
+            .url("$translateEndpoint/translate?api-version=3.0&from=en&to=ko")
+            .addHeader("Ocp-Apim-Subscription-Key", translateApiKey)
+            .addHeader("Ocp-Apim-Subscription-Region", "koreacentral")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("Translate", "Failed to get response from Translate API", e)
+                speak("번역에 실패했습니다.", "ID_ERROR")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.body?.string()?.let { responseBody ->
+                    try {
+                        val jsonResponse = JSONArray(responseBody)
+                        val translations = jsonResponse.getJSONObject(0).getJSONArray("translations")
+                        val translatedText = translations.getJSONObject(0).getString("text")
+
+                        runOnUiThread {
+                            ocrTextView?.text = translatedText
+                            ocrTextView?.visibility = View.VISIBLE
+                            speak(translatedText, "ID_TEXT_READ")
+                        }
+                    } catch (e: JSONException) {
+                        Log.e("Translate", "Failed to parse response from Translate API", e)
+                        speak("번역에 실패했습니다.", "ID_ERROR")
+                    }
+                } ?: run {
+                    speak("번역에 실패했습니다.", "ID_ERROR")
+                }
+            }
+        })
+    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector?.onTouchEvent(event)

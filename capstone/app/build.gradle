@@ -8,6 +8,10 @@ android {
     namespace 'com.ktm.capstone'
     compileSdk 34
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId "com.ktm.capstone"
         minSdk 28
@@ -16,6 +20,11 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField 'String', 'AZURE_VISION_API_KEY', "\"${getLocalProperty('AZURE_VISION_API_KEY')}\""
+        buildConfigField 'String', 'AZURE_TRANSLATE_API_KEY', "\"${getLocalProperty('AZURE_TRANSLATE_API_KEY')}\""
+        buildConfigField 'String', 'AZURE_VISION_ENDPOINT', "\"${getLocalProperty('AZURE_VISION_ENDPOINT')}\""
+        buildConfigField 'String', 'AZURE_TRANSLATE_ENDPOINT', "\"${getLocalProperty('AZURE_TRANSLATE_ENDPOINT')}\""
     }
 
     buildTypes {

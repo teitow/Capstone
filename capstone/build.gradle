@@ -6,20 +6,22 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2' // 사용 중인 Gradle 버전에 맞추어 변경 필요
+        classpath 'com.android.tools.build:gradle:8.2.2'
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.0-RC2'
-        // 사용 중인 Kotlin 버전에 맞추어 변경 필요
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 
-allprojects {
-  /*  repositories {
-        google()
-        mavenCentral()
-    } */
+// 전역적으로 사용할 수 있는 확장 속성 추가
+ext {
+    getLocalProperty = { propName ->
+        def propertiesFile = rootProject.file("local.properties")
+        if (propertiesFile.exists()) {
+            def properties = new Properties()
+            properties.load(propertiesFile.newDataInputStream())
+            return properties[propName]
+        }
+        return null
+    }
 }
 
 task clean(type: Delete) {
