@@ -7,23 +7,15 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.OnInitListener
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.view.GestureDetector
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.OnImageSavedCallback
-import androidx.camera.core.ImageCapture.OutputFileOptions
-import androidx.camera.core.ImageCapture.OutputFileResults
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -34,7 +26,7 @@ import java.util.Locale
 import java.util.concurrent.ExecutionException
 import kotlin.math.abs
 
-class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
+class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var camera: Camera? = null
     private lateinit var preview: Preview
@@ -42,6 +34,7 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
     private var isTTSInitialized = false
     private var cameraClickSound: MediaPlayer? = null
     private lateinit var imageView: ImageView
+    private lateinit var colorTextView: TextView
     private lateinit var gestureDetector: GestureDetector
     private var yStart = 0f
     private var isImageDisplayed = false
@@ -67,8 +60,9 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
         setContentView(R.layout.activity_color_recognition)
         tts = TextToSpeech(this, this)
         imageView = findViewById(R.id.imageView)
+        colorTextView = findViewById(R.id.colorTextView)
         cameraClickSound = MediaPlayer.create(this, R.raw.camera_click)
-        gestureDetector = GestureDetector(this, object : SimpleOnGestureListener() {
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 if (!isImageDisplayed) {
                     captureAndAnalyze()
@@ -137,14 +131,15 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
 
     private fun captureAndAnalyze() {
         imageView.visibility = View.GONE
+        colorTextView.visibility = View.GONE
         val fileName = "pic_" + System.currentTimeMillis() + ".jpg"
         val photoFile = File(getExternalFilesDir(null), fileName)
-        val options = OutputFileOptions.Builder(photoFile).build()
+        val options = ImageCapture.OutputFileOptions.Builder(photoFile).build()
         imageCapture.takePicture(
             options,
             ContextCompat.getMainExecutor(this),
-            object : OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: OutputFileResults) {
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     cameraClickSound?.start()
                     val savedUri = Uri.fromFile(photoFile)
                     imageView.setImageURI(savedUri)
@@ -173,7 +168,11 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
                 val hsv = FloatArray(3)
                 Color.colorToHSV(pixel, hsv)
                 val colorName = getColorNameHSV(hsv[0], hsv[1], hsv[2])
-                speak("인식된 색상은 " + colorName + "입니다.", "COLOR_DETECTED")
+                runOnUiThread {
+                    colorTextView.text = "인식된 색상: $colorName"
+                    colorTextView.visibility = View.VISIBLE
+                    speak("인식된 색상은 $colorName 입니다.", "COLOR_DETECTED")
+                }
                 bitmap.recycle()
             }
         } catch (e: IOException) {
@@ -199,6 +198,7 @@ class ColorRecognitionActivity : AppCompatActivity(), OnInitListener {
 
     private fun resetToInitialView() {
         imageView.visibility = View.GONE
+        colorTextView.visibility = View.GONE
         isImageDisplayed = false
         startCameraPreview()
         speak("초기 화면으로 돌아갑니다.", "ID_RESET")
