@@ -65,7 +65,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_object_recognition)
 
-        supportActionBar?.title = "문자 인식"
+        supportActionBar?.title = "객체 인식"
         tts = TextToSpeech(this, this)
         imageView = findViewById(R.id.imageView)
         ocrTextView = findViewById(R.id.ocrTextView)

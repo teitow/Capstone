@@ -17,11 +17,22 @@
         android:scaleType="centerCrop"
         android:contentDescription="@string/image_view_description" />
 
-    <!-- 추가된 부분: 중앙에 작은 투명 원을 추가하여 색상 인식 범위를 표시 -->
     <View
         android:id="@+id/color_detection_area"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/circle_overlay"
         android:layout_centerInParent="true" />
+
+    <TextView
+        android:id="@+id/colorTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:textSize="20sp"
+        android:textColor="#FFFFFF"
+        android:background="#80000000"
+        android:padding="16dp"
+        android:visibility="gone" />
+
 </RelativeLayout>
