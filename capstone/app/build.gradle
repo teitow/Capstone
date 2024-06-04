@@ -116,6 +116,10 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-javalite'
     }
 
+    // ML Kit Barcode Scanning
+    implementation 'com.google.mlkit:barcode-scanning:17.2.0'
+    implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.0'
+
     // JSON 처리
     implementation 'org.json:json:20211205'
 

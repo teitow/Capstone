@@ -144,3 +144,6 @@ Go-UPC API
 하드 리미트: 50회 요청/월, 1000 요청/시간, 5 요청/분
 
 
+
+
+Talkback 기능? android
