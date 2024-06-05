@@ -71,5 +71,10 @@
             android:name=".ObjectRecognitionActivity">
         </activity>
 
+        <activity
+            android:name=".BarcodeRecognitionActivity"
+            android:exported="true">
+        </activity>
+
     </application>
 </manifest>
