@@ -21,10 +21,22 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        def getLocalProperty = { key ->
+            def propertiesFile = rootProject.file("local.properties")
+            if (propertiesFile.exists()) {
+                def Properties properties = new Properties()
+                properties.load(new FileInputStream(propertiesFile))
+                return properties.getProperty(key)
+            } else {
+                return System.getenv(key)
+            }
+        }
+
         buildConfigField 'String', 'AZURE_VISION_API_KEY', "\"${getLocalProperty('AZURE_VISION_API_KEY')}\""
         buildConfigField 'String', 'AZURE_TRANSLATE_API_KEY', "\"${getLocalProperty('AZURE_TRANSLATE_API_KEY')}\""
         buildConfigField 'String', 'AZURE_VISION_ENDPOINT', "\"${getLocalProperty('AZURE_VISION_ENDPOINT')}\""
         buildConfigField 'String', 'AZURE_TRANSLATE_ENDPOINT', "\"${getLocalProperty('AZURE_TRANSLATE_ENDPOINT')}\""
+        buildConfigField 'String', 'RAPIDAPI_KEY', "\"${getLocalProperty('RAPIDAPI_KEY')}\""
     }
 
     buildTypes {
@@ -130,4 +142,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+
+    // Picasso 라이브러리 추가
+    implementation 'com.squareup.picasso:picasso:2.71828'
 }
