@@ -37,6 +37,7 @@ android {
         buildConfigField 'String', 'AZURE_VISION_ENDPOINT', "\"${getLocalProperty('AZURE_VISION_ENDPOINT')}\""
         buildConfigField 'String', 'AZURE_TRANSLATE_ENDPOINT', "\"${getLocalProperty('AZURE_TRANSLATE_ENDPOINT')}\""
         buildConfigField 'String', 'RAPIDAPI_KEY', "\"${getLocalProperty('RAPIDAPI_KEY')}\""
+        buildConfigField 'String', 'BARCODE_API_KEY', "\"${getLocalProperty('BARCODE_API_KEY')}\""
     }
 
     buildTypes {
