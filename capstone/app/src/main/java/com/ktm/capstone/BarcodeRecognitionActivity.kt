@@ -3,7 +3,6 @@ package com.ktm.capstone
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -126,7 +125,9 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     }
 
     private fun fetchBarcodeInfo(barcode: String) {
-        val url = "http://openapi.foodsafetykorea.go.kr/api/64a6b08d2f644d79b69c/바코드연계제품정보/json/1/1/BRCD_NO=$barcode"
+        val apiKey = BuildConfig.BARCODE_API_KEY
+        val serviceId = "바코드연계제품정보"
+        val url = "http://openapi.foodsafetykorea.go.kr/api/$apiKey/$serviceId/json/1/1/BAR_CD=$barcode"
 
         val client = OkHttpClient()
         val request = Request.Builder().url(url).build()
@@ -134,16 +135,19 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e("BarcodeAPI", "Failed to fetch data: ${e.message}")
-                speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                runOnUiThread {
+                    speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.body?.string()?.let { responseBody ->
                     try {
+                        Log.d("BarcodeAPI", "Response Body: $responseBody")
                         val jsonObject = JSONObject(responseBody)
-                        val productInfo = jsonObject.getJSONObject("I2570").getJSONArray("row").getJSONObject(0)
-                        val productName = productInfo.getString("PRDT_NM")
-                        val company = productInfo.getString("CMPNY_NM")
+                        val productInfo = jsonObject.getJSONObject("C005").getJSONArray("row").getJSONObject(0)
+                        val productName = productInfo.getString("PRDLST_NM")
+                        val company = productInfo.getString("BSSH_NM")
 
                         val resultText = "제품명: $productName\n회사명: $company"
                         runOnUiThread {
@@ -152,14 +156,19 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                         }
                     } catch (e: Exception) {
                         Log.e("BarcodeAPI", "Failed to parse response: ${e.message}")
-                        speak("바코드 정보를 처리하는 데 실패했습니다.", "ID_ERROR")
+                        runOnUiThread {
+                            speak("바코드 정보를 처리하는 데 실패했습니다.", "ID_ERROR")
+                        }
                     }
                 } ?: run {
-                    speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                    runOnUiThread {
+                        speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                    }
                 }
             }
         })
     }
+
 
     private fun speak(text: String, utteranceId: String) {
         if (isTTSInitialized) {
@@ -186,8 +195,8 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         })
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()

@@ -35,7 +35,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- SplashActivity which is the entry point of the app -->
         <activity
             android:name=".SplashActivity"
             android:exported="true">
@@ -45,19 +44,16 @@
             </intent-filter>
         </activity>
 
-        <!-- MainActivity which will be started from SplashActivity -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
         </activity>
 
-        <!-- VoiceSettingsActivity for adjusting TTS settings -->
         <activity
             android:name=".VoiceSettingsActivity"
             android:exported="true">
         </activity>
 
-        <!-- TextToSpeechActivity for OCR and TTS features -->
         <activity
             android:name=".TextToSpeechActivity"
             android:exported="true">
