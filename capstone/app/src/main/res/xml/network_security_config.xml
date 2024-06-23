@@ -3,4 +3,7 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">localhost</domain>
     </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">openapi.foodsafetykorea.go.kr</domain>
+    </domain-config>
 </network-security-config>
