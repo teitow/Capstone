@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.google.zxing.integration.android.IntentIntegrator
 import okhttp3.*
 import org.json.JSONObject
+import org.jsoup.Jsoup
 import java.io.IOException
 import java.util.*
 import kotlin.math.abs
@@ -45,7 +46,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 Log.e("TTS", "Korean language is not supported.")
             } else {
                 isTTSInitialized = true
-                speak("바코드를 스캔하려면 화면을 두 번 누르세요.", "ID_INITIAL")
+                speak("화면을 두 번 누르면 바코드 인식이 시작됩니다. 카메라를 움직이다 바코드에 맞추면 자동으로 인식됩니다.", "ID_INITIAL")
             }
         } else {
             Log.e("TTS", "Initialization failed.")
@@ -125,9 +126,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     }
 
     private fun fetchBarcodeInfo(barcode: String) {
-        val apiKey = BuildConfig.BARCODE_API_KEY
-        val serviceId = "바코드연계제품정보"
-        val url = "http://openapi.foodsafetykorea.go.kr/api/$apiKey/$serviceId/json/1/1/BAR_CD=$barcode"
+        val url = "https://gs1.koreannet.or.kr/pr/$barcode"
 
         val client = OkHttpClient()
         val request = Request.Builder().url(url).build()
@@ -144,12 +143,18 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 response.body?.string()?.let { responseBody ->
                     try {
                         Log.d("BarcodeAPI", "Response Body: $responseBody")
-                        val jsonObject = JSONObject(responseBody)
-                        val productInfo = jsonObject.getJSONObject("C005").getJSONArray("row").getJSONObject(0)
-                        val productName = productInfo.getString("PRDLST_NM")
-                        val company = productInfo.getString("BSSH_NM")
+                        val document = Jsoup.parse(responseBody)
 
-                        val resultText = "제품명: $productName\n회사명: $company"
+                        // Extract product name from the main title
+                        val productName = document.select("div.pv_title h3").first().text()
+
+                        // Extract product category from the table, using exact match for "KAN 상품분류"
+                        val productCategory = document.select("th:matchesOwn(^KAN 상품분류$) + td").first().text().split(" > ").last()
+
+                        // Extract manufacturer from the table
+                        val manufacturer = document.select("th:matchesOwn(^제조사/생산자$) + td").first().text()
+
+                        val resultText = "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer"
                         runOnUiThread {
                             resultTextView.text = resultText
                             speak(resultText, "ID_RESULT")
@@ -168,6 +173,9 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             }
         })
     }
+
+
+
 
 
     private fun speak(text: String, utteranceId: String) {
