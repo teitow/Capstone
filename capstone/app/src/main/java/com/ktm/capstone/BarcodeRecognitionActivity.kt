@@ -18,7 +18,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.zxing.integration.android.IntentIntegrator
 import okhttp3.*
-import org.json.JSONObject
 import org.jsoup.Jsoup
 import java.io.IOException
 import java.util.*
@@ -136,6 +135,8 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 Log.e("BarcodeAPI", "Failed to fetch data: ${e.message}")
                 runOnUiThread {
                     speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                    resultTextView.text = "바코드 정보를 가져오는 데 실패했습니다."
+                    resultTextView.visibility = TextView.VISIBLE
                 }
             }
 
@@ -145,38 +146,56 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                         Log.d("BarcodeAPI", "Response Body: $responseBody")
                         val document = Jsoup.parse(responseBody)
 
-                        // Extract product name from the main title
-                        val productName = document.select("div.pv_title h3").first().text()
+                        val productNameElement = document.selectFirst("div.pv_title h3")
+                        val productCategoryElement = document.selectFirst("th:matchesOwn(^KAN 상품분류$) + td")
+                        val manufacturerElement = document.selectFirst("th:matchesOwn(^제조사/생산자$) + td")
 
-                        // Extract product category from the table, using exact match for "KAN 상품분류"
-                        val productCategory = document.select("th:matchesOwn(^KAN 상품분류$) + td").first().text().split(" > ").last()
+                        if (productNameElement != null && productCategoryElement != null && manufacturerElement != null) {
+                            val productName = productNameElement.text()
+                            val productCategory = productCategoryElement.text().split(" > ").last()
+                            val manufacturer = manufacturerElement.text()
 
-                        // Extract manufacturer from the table
-                        val manufacturer = document.select("th:matchesOwn(^제조사/생산자$) + td").first().text()
-
-                        val resultText = "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer"
-                        runOnUiThread {
-                            resultTextView.text = resultText
-                            speak(resultText, "ID_RESULT")
+                            if (productName.isNotBlank() && productCategory.isNotBlank() && manufacturer.isNotBlank()) {
+                                val resultText = "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer"
+                                runOnUiThread {
+                                    resultTextView.text = resultText
+                                    resultTextView.visibility = TextView.VISIBLE
+                                    speak(resultText, "ID_RESULT")
+                                }
+                            } else {
+                                runOnUiThread {
+                                    val errorMessage = "죄송합니다, 해당 상품을 조회할 수 없습니다."
+                                    resultTextView.text = errorMessage
+                                    resultTextView.visibility = TextView.VISIBLE
+                                    speak(errorMessage, "ID_NO_PRODUCT")
+                                }
+                            }
+                        } else {
+                            runOnUiThread {
+                                val errorMessage = "죄송합니다, 해당 상품을 조회할 수 없습니다."
+                                resultTextView.text = errorMessage
+                                resultTextView.visibility = TextView.VISIBLE
+                                speak(errorMessage, "ID_NO_PRODUCT")
+                            }
                         }
                     } catch (e: Exception) {
                         Log.e("BarcodeAPI", "Failed to parse response: ${e.message}")
                         runOnUiThread {
                             speak("바코드 정보를 처리하는 데 실패했습니다.", "ID_ERROR")
+                            resultTextView.text = "바코드 정보를 처리하는 데 실패했습니다."
+                            resultTextView.visibility = TextView.VISIBLE
                         }
                     }
                 } ?: run {
                     runOnUiThread {
                         speak("바코드 정보를 가져오는 데 실패했습니다.", "ID_ERROR")
+                        resultTextView.text = "바코드 정보를 가져오는 데 실패했습니다."
+                        resultTextView.visibility = TextView.VISIBLE
                     }
                 }
             }
         })
     }
-
-
-
-
 
     private fun speak(text: String, utteranceId: String) {
         if (isTTSInitialized) {
