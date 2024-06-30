@@ -10,7 +10,7 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
     private val imageIds = intArrayOf(
         R.drawable.object_recognition,
         R.drawable.text_to_speech,
-        R.drawable.money_recognition,
+        R.drawable.weather_recognition,
         R.drawable.barcode_recognition,
         R.drawable.color_recognition,
         R.drawable.voice_config
@@ -18,10 +18,10 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
     private val descriptions = arrayOf(
         "객체 인식",
         "텍스트 음성 변환",
-        "지폐 인식",
-        "바코드 인식",
+        "날씨 확인",
+        "바코드 스캔",
         "색상 인식",
-        "음성 응답의 속도나 톤 조절 기능"
+        "TTS 톤과 속도 조절"
     )
 
     override fun getCount(): Int {

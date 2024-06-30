@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.View
 import android.view.View.OnTouchListener
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
@@ -81,7 +80,7 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         when (position) {
             0 -> intent = Intent(this, ObjectRecognitionActivity::class.java)
             1 -> intent = Intent(this, TextToSpeechActivity::class.java)
-            2 -> intent = Intent(this, MoneyRecognitionActivity::class.java)
+            2 -> intent = Intent(this, WeatherRecognitionActivity::class.java)
             3 -> intent = Intent(this, BarcodeRecognitionActivity::class.java)
             4 -> intent = Intent(this, ColorRecognitionActivity::class.java)
             5 -> intent = Intent(this, VoiceSettingsActivity::class.java)
