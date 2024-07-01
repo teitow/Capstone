@@ -38,6 +38,7 @@ android {
         buildConfigField 'String', 'AZURE_TRANSLATE_ENDPOINT', "\"${getLocalProperty('AZURE_TRANSLATE_ENDPOINT')}\""
         buildConfigField 'String', 'RAPIDAPI_KEY', "\"${getLocalProperty('RAPIDAPI_KEY')}\""
         buildConfigField 'String', 'BARCODE_API_KEY', "\"${getLocalProperty('BARCODE_API_KEY')}\""
+        buildConfigField 'String', 'WEATHER_API_KEY', "\"${getLocalProperty('WEATHER_API_KEY')}\""
     }
 
     buildTypes {
@@ -113,6 +114,11 @@ dependencies {
     // OkHttp3
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'
     implementation 'com.squareup.okio:okio:3.0.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.1'
+
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
 
     // gRPC dependencies
     implementation('io.grpc:grpc-okhttp:1.42.0') {
@@ -151,4 +157,6 @@ dependencies {
     implementation 'com.google.zxing:core:3.4.1'
     implementation 'org.jsoup:jsoup:1.13.1'
 
+    // Google Play Services Location 좌표 관료ㄹ녀
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
 }

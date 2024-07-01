@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.View.OnTouchListener
+import android.view.View
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
 import java.util.Locale
@@ -55,7 +55,7 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         }
 
         gestureDetector = GestureDetector(this, this)
-        viewPager.setOnTouchListener(OnTouchListener { _, event: MotionEvent? ->
+        viewPager.setOnTouchListener(View.OnTouchListener { _, event: MotionEvent? ->
             gestureDetector.onTouchEvent(event!!)
             false // Allow the ViewPager to handle the swipe
         })
