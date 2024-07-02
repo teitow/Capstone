@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import okhttp3.*
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -28,11 +29,11 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     private val client = OkHttpClient()
     private lateinit var temperatureTextView: TextView
+    private lateinit var feelsLikeTextView: TextView
     private lateinit var temperatureChangeTextView: TextView
     private lateinit var rainProbabilityTextView: TextView
     private lateinit var locationTextView: TextView
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationData: Map<String, List<Pair<String, String>>>
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
 
@@ -42,6 +43,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         supportActionBar?.title = "날씨 확인"
 
         temperatureTextView = findViewById(R.id.temperatureTextView)
+        feelsLikeTextView = findViewById(R.id.feelsLikeTextView)
         temperatureChangeTextView = findViewById(R.id.temperatureChangeTextView)
         rainProbabilityTextView = findViewById(R.id.rainProbabilityTextView)
         locationTextView = findViewById(R.id.locationTextView)
@@ -60,7 +62,8 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 if (e1 != null && e2 != null) {
                     val deltaY = e2.y - e1.y
                     if (Math.abs(deltaY) > 100 && Math.abs(velocityY) > 100) {
-                        val intent = Intent(this@WeatherRecognitionActivity, MainActivity::class.java)
+                        val intent =
+                            Intent(this@WeatherRecognitionActivity, MainActivity::class.java)
                         startActivity(intent)
                         return true
                     }
@@ -69,8 +72,19 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             }
         })
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 1)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
             return
         }
 
@@ -79,14 +93,11 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 val locationName = getLocationName(it.latitude, it.longitude)
                 locationTextView.text = "현재 지역: $locationName"
                 locationTextView.setTypeface(null, android.graphics.Typeface.BOLD)
-                val coordinates = getGridCoordinates(locationName)
-                fetchWeatherData(coordinates.first, coordinates.second)
+                fetchWeatherData(it.latitude, it.longitude)
             } ?: run {
                 Toast.makeText(this, "위치를 가져올 수 없습니다.", Toast.LENGTH_SHORT).show()
             }
         }
-
-        loadLocationData()
     }
 
     override fun onInit(status: Int) {
@@ -100,15 +111,6 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         }
     }
 
-    private fun loadLocationData() {
-        // 로컬에서 locationData를 로드 (예: SharedPreferences, 파일 등)
-        locationData = mapOf(
-            "서울특별시 종로구 청운효자동" to listOf(Pair("60", "127")),
-            "서울특별시 종로구 사직동" to listOf(Pair("60", "127")),
-            // 다른 데이터를 여기에 추가
-        )
-    }
-
     private fun getLocationName(lat: Double, lon: Double): String {
         val geocoder = Geocoder(this, Locale.getDefault())
         val addresses = geocoder.getFromLocation(lat, lon, 1)
@@ -120,135 +122,148 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         }
     }
 
-    private fun getGridCoordinates(locationName: String): Pair<String, String> {
-        val coordinates = locationData[locationName]
-        return if (coordinates != null && coordinates.isNotEmpty()) {
-            coordinates[0]
-        } else {
-            Pair("60", "127")  // 기본 좌표
-        }
-    }
+    private fun fetchWeatherData(lat: Double, lon: Double) {
+        val apiKey = BuildConfig.WEATHER_API_KEY
+        val url = "https://api.openweathermap.org/data/3.0/onecall?lat=$lat&lon=$lon&units=metric&appid=$apiKey"
 
-    private fun fetchWeatherData(nx: String, ny: String) {
-        val serviceKey = BuildConfig.WEATHER_API_KEY
-        val sdfDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-        val baseDate = sdfDate.format(Date())
-
-        val baseTime = getBaseTime()
-
-        val urlBuilder = StringBuilder("http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst")
-        urlBuilder.append("?serviceKey=$serviceKey")
-        urlBuilder.append("&pageNo=1")
-        urlBuilder.append("&numOfRows=1000")
-        urlBuilder.append("&dataType=JSON")  // JSON 형식으로 요청
-        urlBuilder.append("&base_date=$baseDate")
-        urlBuilder.append("&base_time=$baseTime")
-        urlBuilder.append("&nx=$nx")
-        urlBuilder.append("&ny=$ny")
-
-        val request = Request.Builder().url(urlBuilder.toString()).build()
+        val request = Request.Builder().url(url).build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this@WeatherRecognitionActivity, "API 호출 실패: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
-                response.body?.string()?.let {
+                val responseBody = response.body?.string()
+                if (!response.isSuccessful) {
+                    runOnUiThread {
+                        Toast.makeText(this@WeatherRecognitionActivity, "API 오류: ${responseBody}", Toast.LENGTH_LONG).show()
+                    }
+                    return
+                }
+                responseBody?.let {
+                    Log.d("WeatherData", it)
                     try {
                         parseWeatherData(it)
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        runOnUiThread {
+                            Toast.makeText(this@WeatherRecognitionActivity, "데이터 파싱 오류: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
         })
     }
 
-    private fun getBaseTime(): String {
-        val calendar = Calendar.getInstance()
-        val hour = calendar.get(Calendar.HOUR_OF_DAY)
-        val minute = calendar.get(Calendar.MINUTE)
-
-        val roundedHour = if (minute < 30) hour - 1 else hour
-        return String.format("%02d00", roundedHour)
-    }
 
     private fun parseWeatherData(response: String) {
         try {
             val jsonObject = JSONObject(response)
-            val itemArray = jsonObject.getJSONObject("response")
-                .getJSONObject("body")
-                .getJSONObject("items")
-                .getJSONArray("item")
+            if (jsonObject.has("current")) {
+                val current = jsonObject.getJSONObject("current")
+                val temp = current.getDouble("temp")
+                val feelsLike = current.getDouble("feels_like")
+                val weatherArray = current.getJSONArray("weather")
+                val weather = weatherArray.getJSONObject(0)
+                val description = weather.getString("description")
 
-            var currentTemp = 0.0
-            var rainProbability = 0
-            var rainTime = ""
-            val tempChanges = mutableListOf<Pair<String, Double>>()
-            val rainProbabilities = mutableListOf<Pair<String, Int>>()
+                val hourly = jsonObject.getJSONArray("hourly")
+                val daily = jsonObject.getJSONArray("daily")
 
-            for (i in 0 until itemArray.length()) {
-                val item = itemArray.getJSONObject(i)
-                val category = item.getString("category")
-                val fcstValueString = item.getString("fcstValue")
-                val fcstTime = item.getString("fcstTime")
-                val fcstValue = fcstValueString.toDoubleOrNull()
+                val tempChanges = getTemperatureChanges(hourly, temp)
+                val rainProbabilityMessage = getRainProbability(hourly, daily)
 
-                when (category) {
-                    "T1H" -> fcstValue?.let { currentTemp = it }
-                    "PTY" -> {
-                        fcstValue?.let {
-                            if (it > 0) {
-                                rainProbabilities.add(Pair(fcstTime, (it * 100).toInt()))
-                            }
-                        }
+                runOnUiThread {
+                    temperatureTextView.text = "현재 기온: ${temp}°C"
+                    temperatureTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+                    feelsLikeTextView.text = "체감 온도: ${feelsLike}°C"
+                    feelsLikeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+                    temperatureChangeTextView.text = tempChanges
+                    temperatureChangeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+                    rainProbabilityTextView.text = rainProbabilityMessage
+                    rainProbabilityTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+
+                    val fullText =
+                        "${locationTextView.text}, ${temperatureTextView.text}, ${feelsLikeTextView.text}, ${temperatureChangeTextView.text}, ${rainProbabilityTextView.text}"
+                    speakText(fullText) {
+                        speakText("메인 화면으로 돌아가고 싶다면 화면을 슬라이드 해주세요.")
                     }
                 }
-
-                if (category == "T1H" && fcstValue != null) {
-                    tempChanges.add(Pair(fcstTime, fcstValue))
-                }
-            }
-
-            // 6시간 내 비 올 확률 계산
-            rainProbabilities.sortBy { it.first }
-            if (rainProbabilities.isNotEmpty()) {
-                rainProbability = rainProbabilities.maxOf { it.second }
-                rainTime = rainProbabilities.find { it.second == rainProbability }?.first ?: ""
-            }
-
-            val temperatureChangeMessage = getTemperatureChangeMessage(tempChanges, currentTemp)
-            val rainProbabilityMessage = if (rainProbability > 0) {
-                "비 올 확률: $rainProbability% at $rainTime"
             } else {
-                "6시간 내 비 올 확률 없음"
-            }
-
-            runOnUiThread {
-                temperatureTextView.text = "현재 기온: ${currentTemp}°C"
-                temperatureTextView.setTypeface(null, android.graphics.Typeface.BOLD)
-                temperatureChangeTextView.text = temperatureChangeMessage
-                temperatureChangeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
-                rainProbabilityTextView.text = rainProbabilityMessage
-                rainProbabilityTextView.setTypeface(null, android.graphics.Typeface.BOLD)
-
-                val fullText = "${locationTextView.text}, ${temperatureTextView.text}, ${temperatureChangeTextView.text}, ${rainProbabilityTextView.text}"
-                speakText(fullText) {
-                    speakText("메인 화면으로 돌아가고 싶다면 화면을 슬라이드 해주세요.")
-                }
+                Log.e("WeatherRecognition", "No value for 'current' in API response")
             }
         } catch (e: Exception) {
             Log.e("WeatherRecognition", "Error parsing weather data", e)
         }
     }
 
-    private fun getTemperatureChangeMessage(tempChanges: List<Pair<String, Double>>, currentTemp: Double): String {
-        for ((time, temp) in tempChanges) {
-            if (Math.abs(temp - currentTemp) >= 4) {
-                return "급격한 기온차: $temp°C at $time"
+    private fun getTemperatureChanges(hourly: JSONArray, currentTemp: Double): String {
+        val tempChanges = StringBuilder()
+        for (i in 0 until 4) {
+            val hourData = hourly.getJSONObject(i)
+            val hourTemp = hourData.getDouble("temp")
+            val hour = SimpleDateFormat(
+                "HH시",
+                Locale.getDefault()
+            ).format(Date(hourData.getLong("dt") * 1000))
+            if (Math.abs(hourTemp - currentTemp) >= 4) {
+                tempChanges.append("급격한 기온차: $hourTemp°C at $hour\n")
             }
         }
-        return "6시간 내 급격한 기온차 없음"
+        return if (tempChanges.isEmpty()) "4시간 내 급격한 기온차 없음" else tempChanges.toString()
+    }
+
+    private fun getRainProbability(hourly: JSONArray, daily: JSONArray): String {
+        val now = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val endOfDay = 24 - now
+
+        val rainProbabilityMessage = StringBuilder()
+        val addedTimes = mutableSetOf<String>()
+        var rainStartHour: String? = null
+        var isRaining = false
+
+        for (i in 0 until endOfDay) {
+            val hourData = hourly.getJSONObject(i)
+            val pop = hourData.getDouble("pop")
+            if (pop > 0) {
+                val hour = SimpleDateFormat(
+                    "HH시",
+                    Locale.getDefault()
+                ).format(Date(hourData.getLong("dt") * 1000))
+                if (!addedTimes.contains(hour)) {
+                    addedTimes.add(hour)
+                    if (rainStartHour == null) {
+                        rainStartHour = hour
+                    }
+                    rainProbabilityMessage.append("강수 확률: ${(pop * 100).toInt()}% at $hour\n")
+                    if (hourData.getJSONArray("weather").getJSONObject(0).getString("main") == "Rain") {
+                        isRaining = true
+                    }
+                }
+            }
+        }
+
+        val todayRain = daily.getJSONObject(0).getDouble("pop")
+        if (todayRain > 0) {
+            val rainStartHourDaily = SimpleDateFormat("HH시", Locale.getDefault()).format(
+                Date(
+                    daily.getJSONObject(0).getLong("dt") * 1000
+                )
+            )
+            if (rainStartHour == null) {
+                rainStartHour = rainStartHourDaily
+            }
+            rainProbabilityMessage.append("오늘 비올 확률: ${(todayRain * 100).toInt()}% from $rainStartHour\n")
+        }
+
+        if (isRaining) {
+            rainProbabilityMessage.append("현재 비가 오고 있습니다.")
+        }
+
+        return if (rainProbabilityMessage.isEmpty()) "오늘 밤까지 비올 확률 없음" else rainProbabilityMessage.toString()
     }
 
     private fun speakText(text: String, onDone: (() -> Unit)? = null) {
@@ -257,6 +272,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             override fun onDone(utteranceId: String) {
                 onDone?.invoke()
             }
+
             override fun onError(utteranceId: String) {}
         })
 
