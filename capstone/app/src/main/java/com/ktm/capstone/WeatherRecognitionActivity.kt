@@ -158,7 +158,6 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         })
     }
 
-
     private fun parseWeatherData(response: String) {
         try {
             val jsonObject = JSONObject(response)
@@ -174,20 +173,19 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 val daily = jsonObject.getJSONArray("daily")
 
                 val tempChanges = getTemperatureChanges(hourly, temp)
-                val rainProbabilityMessage = getRainProbability(hourly, daily)
+                val rainProbabilityMessage = getRainProbability(hourly, daily, current)
 
                 runOnUiThread {
-                    temperatureTextView.text = "현재 기온: ${temp}°C"
+                    temperatureTextView.text = "현재 기온: ${temp.toInt()}°C"
                     temperatureTextView.setTypeface(null, android.graphics.Typeface.BOLD)
-                    feelsLikeTextView.text = "체감 온도: ${feelsLike}°C"
+                    feelsLikeTextView.text = "체감 온도: ${feelsLike.toInt()}°C"
                     feelsLikeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
                     temperatureChangeTextView.text = tempChanges
                     temperatureChangeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
                     rainProbabilityTextView.text = rainProbabilityMessage
                     rainProbabilityTextView.setTypeface(null, android.graphics.Typeface.BOLD)
 
-                    val fullText =
-                        "${locationTextView.text}, ${temperatureTextView.text}, ${feelsLikeTextView.text}, ${temperatureChangeTextView.text}, ${rainProbabilityTextView.text}"
+                    val fullText = "${locationTextView.text}, ${temperatureTextView.text}, ${feelsLikeTextView.text}, ${temperatureChangeTextView.text}, ${rainProbabilityTextView.text}"
                     speakText(fullText) {
                         speakText("메인 화면으로 돌아가고 싶다면 화면을 슬라이드 해주세요.")
                     }
@@ -202,13 +200,10 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     private fun getTemperatureChanges(hourly: JSONArray, currentTemp: Double): String {
         val tempChanges = StringBuilder()
-        for (i in 0 until 4) {
+        for (i in 1 until 5) {
             val hourData = hourly.getJSONObject(i)
             val hourTemp = hourData.getDouble("temp")
-            val hour = SimpleDateFormat(
-                "HH시",
-                Locale.getDefault()
-            ).format(Date(hourData.getLong("dt") * 1000))
+            val hour = SimpleDateFormat("HH시", Locale.getDefault()).format(Date(hourData.getLong("dt") * 1000))
             if (Math.abs(hourTemp - currentTemp) >= 4) {
                 tempChanges.append("급격한 기온차: $hourTemp°C at $hour\n")
             }
@@ -216,54 +211,72 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         return if (tempChanges.isEmpty()) "4시간 내 급격한 기온차 없음" else tempChanges.toString()
     }
 
-    private fun getRainProbability(hourly: JSONArray, daily: JSONArray): String {
-        val now = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val endOfDay = 24 - now
+    private fun getRainProbability(hourly: JSONArray, daily: JSONArray, current: JSONObject): String {
+        val currentWeather = current.getJSONArray("weather").getJSONObject(0)
+        val isRainingOrSnowing = currentWeather.getString("main") in listOf("Rain", "Snow")
 
-        val rainProbabilityMessage = StringBuilder()
-        val addedTimes = mutableSetOf<String>()
-        var rainStartHour: String? = null
-        var isRaining = false
+        if (isRainingOrSnowing) {
+            val endTime = getEndTimeOfRainOrSnow(hourly)
+            return if (endTime == "24:00") {
+                "현재 눈/비가 오는 중이고 오늘 하루 내내 올 예정입니다.\n"
+            } else {
+                "현재 눈/비가 오는 중이고 ${endTime}까지 올 예정입니다.\n"
+            }
+        }
 
-        for (i in 0 until endOfDay) {
+        val nearestHighProbabilityTime = getNearestHighProbabilityTime(hourly)
+        val highestProbabilityTime = getHighestProbabilityTime(hourly)
+        val dailyRainVolume = daily.getJSONObject(0).optDouble("rain", 0.0)
+
+        return if (nearestHighProbabilityTime.isNotEmpty() || highestProbabilityTime.isNotEmpty()) {
+            "강수 확률이 40%가 넘는 가장 가까운 시간대는 ${nearestHighProbabilityTime["time"]}이고 ${nearestHighProbabilityTime["probability"]}% 확률로 올 예정입니다.\n" +
+                    "강수 확률이 가장 높은 시간대는 ${highestProbabilityTime["time"]}이고 ${highestProbabilityTime["probability"]}% 확률로 올 예정입니다.\n" +
+                    "오늘 예상 강우량은 ${dailyRainVolume}mm입니다."
+        } else {
+            "오늘 밤까지 눈/비가 올 확률 없습니다."
+        }
+    }
+
+    private fun getNearestHighProbabilityTime(hourly: JSONArray): Map<String, String> {
+        for (i in 0 until hourly.length()) {
             val hourData = hourly.getJSONObject(i)
             val pop = hourData.getDouble("pop")
-            if (pop > 0) {
-                val hour = SimpleDateFormat(
-                    "HH시",
-                    Locale.getDefault()
-                ).format(Date(hourData.getLong("dt") * 1000))
-                if (!addedTimes.contains(hour)) {
-                    addedTimes.add(hour)
-                    if (rainStartHour == null) {
-                        rainStartHour = hour
-                    }
-                    rainProbabilityMessage.append("강수 확률: ${(pop * 100).toInt()}% at $hour\n")
-                    if (hourData.getJSONArray("weather").getJSONObject(0).getString("main") == "Rain") {
-                        isRaining = true
-                    }
-                }
+            if (pop >= 0.4) {
+                val time = SimpleDateFormat("HH시", Locale.getDefault()).format(Date(hourData.getLong("dt") * 1000))
+                return mapOf("time" to time, "probability" to (pop * 100).toInt().toString())
             }
         }
+        return emptyMap()
+    }
 
-        val todayRain = daily.getJSONObject(0).getDouble("pop")
-        if (todayRain > 0) {
-            val rainStartHourDaily = SimpleDateFormat("HH시", Locale.getDefault()).format(
-                Date(
-                    daily.getJSONObject(0).getLong("dt") * 1000
-                )
-            )
-            if (rainStartHour == null) {
-                rainStartHour = rainStartHourDaily
+    private fun getHighestProbabilityTime(hourly: JSONArray): Map<String, String> {
+        var highestPop = 0.0
+        var highestTime = ""
+        for (i in 0 until hourly.length()) {
+            val hourData = hourly.getJSONObject(i)
+            val pop = hourData.getDouble("pop")
+            if (pop > highestPop) {
+                highestPop = pop
+                highestTime = SimpleDateFormat("HH시", Locale.getDefault()).format(Date(hourData.getLong("dt") * 1000))
             }
-            rainProbabilityMessage.append("오늘 비올 확률: ${(todayRain * 100).toInt()}% from $rainStartHour\n")
         }
-
-        if (isRaining) {
-            rainProbabilityMessage.append("현재 비가 오고 있습니다.")
+        return if (highestTime.isNotEmpty()) {
+            mapOf("time" to highestTime, "probability" to (highestPop * 100).toInt().toString())
+        } else {
+            emptyMap()
         }
+    }
 
-        return if (rainProbabilityMessage.isEmpty()) "오늘 밤까지 비올 확률 없음" else rainProbabilityMessage.toString()
+    private fun getEndTimeOfRainOrSnow(hourly: JSONArray): String {
+        for (i in 0 until hourly.length()) {
+            val hourData = hourly.getJSONObject(i)
+            val weather = hourData.getJSONArray("weather").getJSONObject(0)
+            val main = weather.getString("main")
+            if (main !in listOf("Rain", "Snow")) {
+                return SimpleDateFormat("HH시", Locale.getDefault()).format(Date(hourData.getLong("dt") * 1000))
+            }
+        }
+        return "24:00"
     }
 
     private fun speakText(text: String, onDone: (() -> Unit)? = null) {
