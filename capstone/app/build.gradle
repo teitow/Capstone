@@ -39,6 +39,7 @@ android {
         buildConfigField 'String', 'RAPIDAPI_KEY', "\"${getLocalProperty('RAPIDAPI_KEY')}\""
         buildConfigField 'String', 'BARCODE_API_KEY', "\"${getLocalProperty('BARCODE_API_KEY')}\""
         buildConfigField 'String', 'WEATHER_API_KEY', "\"${getLocalProperty('WEATHER_API_KEY')}\""
+        buildConfigField 'String', 'ORA_OPENAI_API_KEY', "\"${getLocalProperty('ORA_OPENAI_API_KEY')}\""
     }
 
     buildTypes {

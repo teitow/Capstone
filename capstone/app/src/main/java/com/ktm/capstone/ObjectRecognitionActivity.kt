@@ -1,11 +1,14 @@
 package com.ktm.capstone
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.util.Base64
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -20,17 +23,16 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import okhttp3.*
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONException
-import java.util.concurrent.ExecutionException
 
 class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
@@ -135,7 +137,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                     preview,
                     imageCapture
                 )
-            } catch (e: ExecutionException) {
+            } catch (e: Exception) {
                 Log.e("CameraXApp", "Use case binding failed", e)
             } catch (e: InterruptedException) {
                 Log.e("CameraXApp", "Use case binding failed", e)
@@ -160,7 +162,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                     imageView?.visibility = View.VISIBLE
                     isImageDisplayed = true
                     Log.d("CameraXApp", "Photo saved successfully: $savedUri")
-                    analyzeImageWithAzure(photoFile)
+                    analyzeImageWithOpenAI(photoFile)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -174,50 +176,61 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         return BuildConfig::class.java.getField(key).get(null) as String
     }
 
-    private fun analyzeImageWithAzure(photoFile: File) {
-        val apiKey = getEnvVariable("AZURE_VISION_API_KEY")
-        val endpoint = getEnvVariable("AZURE_VISION_ENDPOINT")
-
+    private fun analyzeImageWithOpenAI(photoFile: File) {
+        val apiKey = getEnvVariable("ORA_OPENAI_API_KEY")
         val client = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        val mediaType = "application/octet-stream".toMediaTypeOrNull()
-        val requestBody = RequestBody.create(mediaType, photoFile)
+        val base64Image = encodeImageToBase64(photoFile, 512, 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
+        val json = JSONObject().apply {
+            put("model", "gpt-4o")
+            put("messages", JSONArray().put(JSONObject().apply {
+                put("role", "user")
+                put("content", JSONArray().put(JSONObject().apply {
+                    put("type", "text")
+                    put("text", "시각 장애인을 위해 이 이미지를 문자로 설명하고자 합니다. 핵심적인 부분만 간략하게 문자로 이 사진을 요약해주십시오.")
+                }).put(JSONObject().apply {
+                    put("type", "image_url")
+                    put("image_url", JSONObject().apply {
+                        put("url", "data:image/jpeg;base64,$base64Image")
+                        put("detail", "low")
+                    })
+                }))
+            }))
+            put("max_tokens", 300)
+        }
 
+        val requestBody = json.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
         val request = Request.Builder()
-            .url("$endpoint/vision/v3.1/describe")
-            .addHeader("Ocp-Apim-Subscription-Key", apiKey)
+            .url("https://api.openai.com/v1/chat/completions")
+            .addHeader("Authorization", "Bearer $apiKey")
             .post(requestBody)
             .build()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("AzureVision", "Failed to get response from Azure Vision API", e)
+                Log.e("OpenAI", "Failed to get response from OpenAI API", e)
                 speak("이미지 분석에 실패했습니다.", "ID_ERROR")
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.body?.string()?.let { responseBody ->
-                    Log.d("AzureVision Response", responseBody)
+                    Log.d("OpenAI Response", responseBody)
                     try {
                         val jsonResponse = JSONObject(responseBody)
-                        if (jsonResponse.has("description")) {
-                            val descriptions = jsonResponse
-                                .getJSONObject("description")
-                                .getJSONArray("captions")
-                                .getJSONObject(0)
-                                .getString("text")
+                        val choices = jsonResponse.getJSONArray("choices")
+                        val description = choices.getJSONObject(0).getJSONObject("message").getString("content")
 
-                            translateAndSpeak(descriptions)
-                        } else {
-                            Log.e("AzureVision", "No description found in response")
-                            speak("문장 생성에 실패했습니다.", "ID_ERROR")
+                        runOnUiThread {
+                            ocrTextView?.text = description
+                            ocrTextView?.visibility = View.VISIBLE
+                            speak(description, "ID_TEXT_READ")
                         }
                     } catch (e: JSONException) {
-                        Log.e("AzureVision", "Failed to parse response from Azure Vision API", e)
+                        Log.e("OpenAI", "Failed to parse response from OpenAI API", e)
                         speak("문장 생성에 실패했습니다.", "ID_ERROR")
                     }
                 } ?: run {
@@ -227,54 +240,12 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         })
     }
 
-    private fun translateAndSpeak(text: String) {
-        val translateApiKey = getEnvVariable("AZURE_TRANSLATE_API_KEY")
-        val translateEndpoint = getEnvVariable("AZURE_TRANSLATE_ENDPOINT")
-
-        val client = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-
-        val json = JSONArray().put(JSONObject().put("Text", text)).toString()
-        val requestBody = json.toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-
-        val request = Request.Builder()
-            .url("$translateEndpoint/translate?api-version=3.0&from=en&to=ko")
-            .addHeader("Ocp-Apim-Subscription-Key", translateApiKey)
-            .addHeader("Ocp-Apim-Subscription-Region", "koreacentral")
-            .addHeader("Content-Type", "application/json")
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e("Translate", "Failed to get response from Translate API", e)
-                speak("번역에 실패했습니다.", "ID_ERROR")
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.body?.string()?.let { responseBody ->
-                    try {
-                        val jsonResponse = JSONArray(responseBody)
-                        val translations = jsonResponse.getJSONObject(0).getJSONArray("translations")
-                        val translatedText = translations.getJSONObject(0).getString("text")
-
-                        runOnUiThread {
-                            ocrTextView?.text = translatedText
-                            ocrTextView?.visibility = View.VISIBLE
-                            speak(translatedText, "ID_TEXT_READ")
-                        }
-                    } catch (e: JSONException) {
-                        Log.e("Translate", "Failed to parse response from Translate API", e)
-                        speak("번역에 실패했습니다.", "ID_ERROR")
-                    }
-                } ?: run {
-                    speak("번역에 실패했습니다.", "ID_ERROR")
-                }
-            }
-        })
+    private fun encodeImageToBase64(photoFile: File, width: Int, height: Int): String {
+        val bitmap = BitmapFactory.decodeFile(photoFile.path)
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
+        val outputStream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
