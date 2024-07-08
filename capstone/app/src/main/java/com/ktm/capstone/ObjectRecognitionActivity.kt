@@ -48,6 +48,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
     private var isImageDisplayed = false
     private var cameraProvider: ProcessCameraProvider? = null
     private var cameraSelector: CameraSelector? = null
+    private var descriptionMode: String = "BASIC"
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -84,6 +85,8 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         })
         initializeCamera()
         setupTTS()
+
+        descriptionMode = intent.getStringExtra("MODE") ?: "BASIC"
     }
 
     private fun setupTTS() {
@@ -185,13 +188,19 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
             .build()
 
         val base64Image = encodeImageToBase64(photoFile, 512, 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
+        val descriptionText = if (descriptionMode == "DETAILED") {
+            "시각 장애인을 위해 이 이미지를 문자로 설명하고자 합니다. 섬세하고 상세하게 이 사진을 요약해주십시오."
+        } else {
+            "시각 장애인을 위해 이 이미지를 문자로 설명하고자 합니다. 핵심적인 부분만 간략하게 문자로 이 사진을 요약해주십시오."
+        }
+
         val json = JSONObject().apply {
             put("model", "gpt-4o")
             put("messages", JSONArray().put(JSONObject().apply {
                 put("role", "user")
                 put("content", JSONArray().put(JSONObject().apply {
                     put("type", "text")
-                    put("text", "시각 장애인을 위해 이 이미지를 문자로 설명하고자 합니다. 핵심적인 부분만 간략하게 문자로 이 사진을 요약해주십시오.")
+                    put("text", descriptionText)
                 }).put(JSONObject().apply {
                     put("type", "image_url")
                     put("image_url", JSONObject().apply {
