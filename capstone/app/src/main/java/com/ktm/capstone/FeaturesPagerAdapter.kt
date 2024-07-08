@@ -62,7 +62,7 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(0, -200, 0, 0) // 상단 마진을 -20dp로 설정하여 텍스트를 이미지와 더 가깝게 위치
+            setMargins(0, -200, 0, 0) // 상단 마진을 -200dp로 설정하여 텍스트를 이미지와 더 가깝게 위치
         }
         layout.addView(textView)
 
