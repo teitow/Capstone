@@ -1,6 +1,6 @@
 package com.ktm.capstone
 
-import android.content.Intent
+import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
@@ -11,28 +11,23 @@ import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 import kotlin.math.abs
 
-class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class ColorModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
     private var options = listOf(
-        "TTS 속도",
-        "다크 모드",
-        "배터리 세이브",
-        "객체 모드",
-        "색상 모드",
-        "날씨 모드",
-        "바코드 모드"
+        "기본 모드",
+        "디테일 모드"
     )
     private var selectedPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_config)
+        setContentView(R.layout.activity_color_mode)
 
-        supportActionBar?.title = "앱 환경 설정"
+        supportActionBar?.title = "컬러 모드 선택"
 
         tts = TextToSpeech(this, this)
 
@@ -61,7 +56,6 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     }
                     updateSelection()
                 } else {
-                    // 상하 슬라이드 및 하상 슬라이드 처리
                     finish()
                 }
                 return true
@@ -82,14 +76,16 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun executeOption(position: Int) {
         stopTTS()
         val selectedOption = options[position]
-        when (selectedOption) {
-            "TTS 속도" -> startActivity(Intent(this, VoiceSettingsActivity::class.java))
-            "다크 모드" -> startActivity(Intent(this, DarkModeActivity::class.java))
-            "배터리 세이브" -> startActivity(Intent(this, BatterySaveActivity::class.java))
-            "객체 모드" -> startActivity(Intent(this, ObjectModeActivity::class.java))
-            "색상 모드" -> startActivity(Intent(this, ColorModeActivity::class.java))
-            "날씨 모드" -> startActivity(Intent(this, WeatherModeActivity::class.java))
-            "바코드 모드" -> startActivity(Intent(this, BarcodeModeActivity::class.java))
+        val mode = if (selectedOption == "기본 모드") "BASIC" else "DETAILED"
+        saveMode(mode)
+        finish()
+    }
+
+    private fun saveMode(mode: String) {
+        val sharedPref = getSharedPreferences("ColorModePref", Context.MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putString("MODE", mode)
+            apply()
         }
     }
 
@@ -110,7 +106,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             tts.language = Locale.KOREAN
             tts.speak(
-                "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                "좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "InitialInstructions"

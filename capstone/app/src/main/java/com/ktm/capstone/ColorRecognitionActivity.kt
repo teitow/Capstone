@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.net.Uri
@@ -8,6 +9,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.util.Base64
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -20,13 +22,20 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import okhttp3.*
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.util.Locale
-import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
-class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var camera: Camera? = null
     private lateinit var preview: Preview
@@ -40,6 +49,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     private var isImageDisplayed = false
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var cameraSelector: CameraSelector
+    private var descriptionMode: String = "BASIC"
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -74,6 +84,10 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         })
         initializeCamera()
         setupTTS()
+
+        // SharedPreferences에서 모드를 가져옴
+        val sharedPref = getSharedPreferences("ColorModePref", MODE_PRIVATE)
+        descriptionMode = sharedPref.getString("MODE", "BASIC") ?: "BASIC"
     }
 
     private fun initializeCamera() {
@@ -93,9 +107,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                     preview,
                     imageCapture
                 )
-            } catch (e: ExecutionException) {
-                Log.e("CameraXApp", "Use case binding failed", e)
-            } catch (e: InterruptedException) {
+            } catch (e: Exception) {
                 Log.e("CameraXApp", "Use case binding failed", e)
             }
         }, ContextCompat.getMainExecutor(this))
@@ -146,7 +158,11 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                     imageView.visibility = View.VISIBLE
                     isImageDisplayed = true
                     Log.d("CameraXApp", "Photo saved successfully: $savedUri")
-                    analyzeColor(savedUri)
+                    if (descriptionMode == "BASIC") {
+                        analyzeColor(savedUri)
+                    } else {
+                        analyzeImageWithOpenAI(photoFile)
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -167,7 +183,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                 val pixel = bitmap.getPixel(centerX, centerY)
                 val hsv = FloatArray(3)
                 Color.colorToHSV(pixel, hsv)
-                val colorName = getColorNameHSV(hsv[0], hsv[1], hsv[2])
+                val colorName = getColorNameHSV(hue = hsv[0], saturation = hsv[1], value = hsv[2])
                 runOnUiThread {
                     colorTextView.text = "인식된 색상: $colorName"
                     colorTextView.visibility = View.VISIBLE
@@ -178,6 +194,80 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         } catch (e: IOException) {
             Log.e("ColorRecognition", "Error accessing file: " + e.message, e)
         }
+    }
+
+    private fun analyzeImageWithOpenAI(photoFile: File) {
+        val apiKey = getEnvVariable("ORA_OPENAI_API_KEY")
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        val base64Image = encodeImageToBase64(photoFile, width = 512, height = 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
+        val descriptionText = "시각 장애인을 위한 설명이 필요합니다, 지금 현재 카메라가 촬영하고 있는 물체중에 카메라에 가장 가까운 물체의 색상을 서술해주세요."
+
+        val json = JSONObject().apply {
+            put("model", "gpt-4o")
+            put("messages", JSONArray().put(JSONObject().apply {
+                put("role", "user")
+                put("content", JSONArray().put(JSONObject().apply {
+                    put("type", "text")
+                    put("text", descriptionText)
+                }).put(JSONObject().apply {
+                    put("type", "image_url")
+                    put("image_url", JSONObject().apply {
+                        put("url", "data:image/jpeg;base64,$base64Image")
+                        put("detail", "low")
+                    })
+                }))
+            }))
+            put("max_tokens", 300)
+        }
+
+        val requestBody = json.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        val request = Request.Builder()
+            .url("https://api.openai.com/v1/chat/completions")
+            .addHeader("Authorization", "Bearer $apiKey")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("OpenAI", "Failed to get response from OpenAI API", e)
+                speak("이미지 분석에 실패했습니다.", "ID_ERROR")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.body?.string()?.let { responseBody ->
+                    Log.d("OpenAI Response", responseBody)
+                    try {
+                        val jsonResponse = JSONObject(responseBody)
+                        val choices = jsonResponse.getJSONArray("choices")
+                        val description = choices.getJSONObject(0).getJSONObject("message").getString("content")
+
+                        runOnUiThread {
+                            colorTextView.text = description
+                            colorTextView.visibility = View.VISIBLE
+                            speak(description, "COLOR_DETECTED")
+                        }
+                    } catch (e: JSONException) {
+                        Log.e("OpenAI", "Failed to parse response from OpenAI API", e)
+                        speak("문장 생성에 실패했습니다.", "ID_ERROR")
+                    }
+                } ?: run {
+                    speak("문장 생성에 실패했습니다.", "ID_ERROR")
+                }
+            }
+        })
+    }
+
+    private fun encodeImageToBase64(photoFile: File, width: Int, height: Int): String {
+        val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, Uri.fromFile(photoFile))
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
+        val outputStream = ByteArrayOutputStream()
+        resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
     }
 
     private fun getColorNameHSV(hue: Float, saturation: Float, value: Float): String {
@@ -193,7 +283,6 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         if (hue < 240) return "남색"
         if (hue < 280) return "보라"
         return if (hue < 330) "핑크" else "색상을 알 수 없습니다. 다시 한번 촬영해주세요"
-        // 일부 색상이 겹치거나 구분이 모호할 경우
     }
 
     private fun resetToInitialView() {
@@ -242,5 +331,9 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
             tts!!.shutdown()
         }
         super.onDestroy()
+    }
+
+    private fun getEnvVariable(key: String): String {
+        return BuildConfig::class.java.getField(key).get(null) as String
     }
 }

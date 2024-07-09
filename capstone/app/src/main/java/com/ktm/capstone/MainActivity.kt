@@ -28,14 +28,14 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         viewPager = findViewById(R.id.viewPager)
         adapter = FeaturesPagerAdapter(this)
         viewPager.adapter = adapter
-        viewPager.currentItem = 0 // Set initial item to the first one
+        viewPager.currentItem = 0 // 초기 항목을 첫 번째로 설정
         viewPager.addOnPageChangeListener(object : SimpleOnPageChangeListener() {
             override fun onPageSelected(position: Int) {
-                readFeatureDescription(position % adapter.count) // Use modulo to cycle descriptions
+                readFeatureDescription(position % adapter.count) // 설명을 순환하도록 모듈로 사용
             }
         })
 
-        // Load TTS settings from SharedPreferences
+        // SharedPreferences에서 TTS 설정 불러오기
         prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         val savedPitch = prefs?.getFloat("pitch", 1.0f) ?: 1.0f
         val savedSpeed = prefs?.getFloat("speed", 1.0f) ?: 1.0f
@@ -43,10 +43,10 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         tts = TextToSpeech(this) { status: Int ->
             if (status == TextToSpeech.SUCCESS) {
                 tts?.setLanguage(Locale.KOREAN)
-                tts?.setPitch(savedPitch) // Apply saved pitch
-                tts?.setSpeechRate(savedSpeed) // Apply saved speed
+                tts?.setPitch(savedPitch) // 저장된 피치 적용
+                tts?.setSpeechRate(savedSpeed) // 저장된 속도 적용
                 tts?.speak(
-                    "화면을 슬라이드 하거나 탭을 하세요.",
+                    "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
                     TextToSpeech.QUEUE_FLUSH,
                     null,
                     "InitialInstruction"
@@ -57,10 +57,11 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         gestureDetector = GestureDetector(this, this)
         viewPager.setOnTouchListener(View.OnTouchListener { _, event: MotionEvent? ->
             gestureDetector.onTouchEvent(event!!)
-            false // Allow the ViewPager to handle the swipe
+            false // ViewPager가 스와이프를 처리할 수 있도록 함
         })
     }
 
+    // 현재 선택된 기능 설명을 읽어주는 메서드
     private fun readFeatureDescription(position: Int) {
         if (tts != null) {
             val description = adapter.getDescription(position)
@@ -69,8 +70,6 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
     }
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        val currentItem = viewPager.currentItem
-        viewPager.setCurrentItem((currentItem + 1) % adapter.count, true) // Move to the next item, wrap around
         return true
     }
 
@@ -78,12 +77,17 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         val position = viewPager.currentItem
         var intent: Intent? = null
         when (position) {
-            0 -> intent = Intent(this, ObjectRecognitionActivity::class.java)
+            0 -> {
+                intent = Intent(this, ObjectRecognitionActivity::class.java)
+                val modePrefs = getSharedPreferences("ObjectModePref", MODE_PRIVATE)
+                val mode = modePrefs.getString("MODE", "BASIC")
+                intent.putExtra("MODE", mode)
+            }
             1 -> intent = Intent(this, TextToSpeechActivity::class.java)
             2 -> intent = Intent(this, WeatherRecognitionActivity::class.java)
             3 -> intent = Intent(this, BarcodeRecognitionActivity::class.java)
             4 -> intent = Intent(this, ColorRecognitionActivity::class.java)
-            5 -> intent = Intent(this, VoiceSettingsActivity::class.java)
+            5 -> intent = Intent(this, ConfigActivity::class.java)
         }
         intent?.let { startActivity(it) }
         return true
@@ -100,15 +104,7 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
         velocityY: Float
     ): Boolean {
         if (abs(velocityY.toDouble()) > abs(velocityX.toDouble())) {
-            if (velocityY > 0) {
-                viewPager.setCurrentItem((viewPager.currentItem + 1) % adapter.count, true)
-            } else {
-                var targetIndex = (viewPager.currentItem - 1) % adapter.count
-                if (targetIndex < 0) {
-                    targetIndex += adapter.count
-                }
-                viewPager.setCurrentItem(targetIndex, true)
-            }
+            finish() // 현재 액티비티 종료, 뒤로가기 버튼과 유사한 동작
             return true
         }
         return false
@@ -131,5 +127,13 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
 
     override fun onDoubleTapEvent(e: MotionEvent): Boolean {
         return false
+    }
+
+    override fun onDestroy() {
+        if (tts != null) {
+            tts!!.stop()
+            tts!!.shutdown()
+        }
+        super.onDestroy()
     }
 }

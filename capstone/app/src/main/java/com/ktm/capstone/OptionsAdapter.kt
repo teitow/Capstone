@@ -1,5 +1,6 @@
 package com.ktm.capstone
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,8 +8,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class OptionsAdapter(
-    private val options: List<String>,
-    private val onItemClick: (Int) -> Unit
+    private val options: List<String>
 ) : RecyclerView.Adapter<OptionsAdapter.ViewHolder>() {
 
     private var selectedPosition = -1
@@ -25,9 +25,12 @@ class OptionsAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.optionTextView.text = options[position]
-        holder.itemView.isSelected = position == selectedPosition
-        holder.itemView.setOnClickListener {
-            onItemClick(position)
+        if (position == selectedPosition) {
+            holder.itemView.setBackgroundColor(Color.parseColor("#FF4081"))
+            holder.optionTextView.setTextColor(Color.WHITE)
+        } else {
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT)
+            holder.optionTextView.setTextColor(Color.BLACK)
         }
     }
 
