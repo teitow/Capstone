@@ -80,5 +80,41 @@
             android:exported="true">
         </activity>
 
+        <!-- 추가된 액티비티들 -->
+        <activity
+            android:name=".ConfigActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".DarkModeActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".BatterySaveActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".ObjectModeActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".ColorModeActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".WeatherModeActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".BarcodeModeActivity"
+            android:exported="true">
+        </activity>
+
     </application>
 </manifest>

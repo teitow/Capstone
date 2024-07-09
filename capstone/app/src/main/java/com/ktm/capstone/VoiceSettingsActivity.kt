@@ -15,8 +15,8 @@ class VoiceSettingsActivity : Activity(), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
     private var tts: TextToSpeech? = null
     private var gestureDetector: GestureDetector? = null
-    private var pitch = 1.0f // Default pitch
-    private var speed = 1.0f // Default speed
+    private var pitch = 1.0f // 기본 톤
+    private var speed = 1.0f // 기본 속도
     private var ttsInitialized = false
     private lateinit var prefs: SharedPreferences
 
@@ -35,7 +35,7 @@ class VoiceSettingsActivity : Activity(), GestureDetector.OnGestureListener,
                     it.setSpeechRate(speed)
                     ttsInitialized = true
                     it.speak(
-                        "화면을 좌우로 슬라이드 해 속도를 조절하고 상하로 슬라이드해서 톤을 조절해주세요. 기본 값은 1입니다. 조절이 완료되면 화면을 두번 누르면 메인화면으로 돌아갑니다.",
+                        "화면을 좌우로 슬라이드 해 속도를 조절하고 상하로 슬라이드해서 톤을 조절해주세요. 기본 값은 1입니다. 조절이 완료되면 화면을 두번 누르면 이전 화면으로 돌아갑니다.",
                         TextToSpeech.QUEUE_FLUSH,
                         null,
                         null
@@ -61,6 +61,7 @@ class VoiceSettingsActivity : Activity(), GestureDetector.OnGestureListener,
         velocityY: Float
     ): Boolean {
         if (!ttsInitialized) return false
+        stopTTS()
         val editor = prefs.edit()
         if (abs(velocityX.toDouble()) > abs(velocityY.toDouble())) {
             if (velocityX > 0) {
@@ -107,7 +108,8 @@ class VoiceSettingsActivity : Activity(), GestureDetector.OnGestureListener,
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
-        val intent = Intent(this, MainActivity::class.java)
+        stopTTS()
+        val intent = Intent(this, ConfigActivity::class.java)
         startActivity(intent)
         return true
     }
@@ -118,6 +120,12 @@ class VoiceSettingsActivity : Activity(), GestureDetector.OnGestureListener,
 
     override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
         return false
+    }
+
+    private fun stopTTS() {
+        if (tts?.isSpeaking == true) {
+            tts?.stop()
+        }
     }
 
     override fun onDestroy() {
