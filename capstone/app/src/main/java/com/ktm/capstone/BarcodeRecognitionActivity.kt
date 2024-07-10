@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -32,6 +33,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     private lateinit var viewFinder: PreviewView
     private var yStart = 0f
     private var imageCapture: ImageCapture? = null
+    private var mode: String = "BASIC"
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
@@ -63,7 +65,6 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_barcode_recognition)
@@ -85,6 +86,9 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
+
+        val sharedPref = getSharedPreferences("BarcodeModePref", Context.MODE_PRIVATE)
+        mode = sharedPref.getString("MODE", "BASIC") ?: "BASIC"
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -161,26 +165,26 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                         val productNameElement = document.selectFirst("div.pv_title h3")
                         val productCategoryElement = document.selectFirst("th:matchesOwn(^KAN 상품분류$) + td")
                         val manufacturerElement = document.selectFirst("th:matchesOwn(^제조사/생산자$) + td")
+                        val sellerElement = document.selectFirst("th:matchesOwn(^판매자$) + td")
+                        val dimensionsElement = document.selectFirst("th:matchesOwn(^규격\\(가로 x 세로 x 높이\\)$) + td")
+                        val totalWeightElement = document.selectFirst("th:matchesOwn(^총중량$) + td")
 
-                        if (productNameElement != null && productCategoryElement != null && manufacturerElement != null) {
+                        if (productNameElement != null && productCategoryElement != null) {
                             val productName = productNameElement.text()
                             val productCategory = productCategoryElement.text().split(" > ").last()
-                            val manufacturer = manufacturerElement.text()
-
-                            if (productName.isNotBlank() && productCategory.isNotBlank() && manufacturer.isNotBlank()) {
-                                val resultText = "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer"
-                                runOnUiThread {
-                                    resultTextView.text = resultText
-                                    resultTextView.visibility = TextView.VISIBLE
-                                    speak(resultText, "ID_RESULT")
-                                }
+                            val resultText = if (mode == "BASIC") {
+                                "제품명: $productName\n상품분류: $productCategory"
                             } else {
-                                runOnUiThread {
-                                    val errorMessage = "죄송합니다, 해당 상품을 조회할 수 없습니다."
-                                    resultTextView.text = errorMessage
-                                    resultTextView.visibility = TextView.VISIBLE
-                                    speak(errorMessage, "ID_NO_PRODUCT")
-                                }
+                                val manufacturer = manufacturerElement?.text() ?: "정보 없음"
+                                val seller = sellerElement?.text() ?: "정보 없음"
+                                val dimensions = dimensionsElement?.text() ?: "정보 없음"
+                                val totalWeight = totalWeightElement?.text() ?: "정보 없음"
+                                "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer\n판매자: $seller\n규격: $dimensions\n총중량: $totalWeight"
+                            }
+                            runOnUiThread {
+                                resultTextView.text = resultText
+                                resultTextView.visibility = TextView.VISIBLE
+                                speak(resultText, "ID_RESULT")
                             }
                         } else {
                             runOnUiThread {
