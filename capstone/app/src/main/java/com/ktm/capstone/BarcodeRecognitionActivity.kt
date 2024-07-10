@@ -40,6 +40,17 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
+            // SharedPreferences에서 TTS 설정 불러오기
+            val prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
+            val savedPitch = prefs.getFloat("pitch", 1.0f)
+            val savedSpeed = prefs.getFloat("speed", 1.0f)
+
+            tts?.let {
+                it.language = Locale.KOREAN
+                it.setPitch(savedPitch) // 저장된 피치 적용
+                it.setSpeechRate(savedSpeed) // 저장된 속도 적용
+            }
+
             val result = tts?.setLanguage(Locale.KOREAN)
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TTS", "Korean language is not supported.")
@@ -51,6 +62,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             Log.e("TTS", "Initialization failed.")
         }
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

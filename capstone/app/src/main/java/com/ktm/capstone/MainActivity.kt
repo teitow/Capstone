@@ -74,6 +74,7 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
     }
 
     override fun onDoubleTap(e: MotionEvent): Boolean {
+        stopTTS()
         val position = viewPager.currentItem
         var intent: Intent? = null
         when (position) {
@@ -127,6 +128,12 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
 
     override fun onDoubleTapEvent(e: MotionEvent): Boolean {
         return false
+    }
+
+    private fun stopTTS() {
+        if (tts?.isSpeaking == true) {
+            tts?.stop()
+        }
     }
 
     override fun onDestroy() {

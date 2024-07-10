@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
@@ -49,15 +50,22 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
     private var cameraProvider: ProcessCameraProvider? = null
     private var cameraSelector: CameraSelector? = null
     private var descriptionMode: String = "BASIC"
+    private lateinit var prefs: SharedPreferences
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale.KOREAN)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("TTS", "Korean language is not supported.")
-            } else {
-                isTTSInitialized = true
-                speak("사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요.", "ID_INITIAL")
+            tts?.let {
+                val result = it.setLanguage(Locale.KOREAN)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Korean language is not supported.")
+                } else {
+                    isTTSInitialized = true
+                    val savedPitch = prefs.getFloat("pitch", 1.0f)
+                    val savedSpeed = prefs.getFloat("speed", 1.0f)
+                    it.setPitch(savedPitch)
+                    it.setSpeechRate(savedSpeed)
+                    speak("사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요.", "ID_INITIAL")
+                }
             }
         } else {
             Log.e("TTS", "Initialization failed.")
@@ -70,6 +78,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
 
         supportActionBar?.title = "객체 인식"
         tts = TextToSpeech(this, this)
+        prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         imageView = findViewById(R.id.imageView)
         ocrTextView = findViewById(R.id.ocrTextView)
         cameraClickSound = MediaPlayer.create(this, R.raw.camera_click)

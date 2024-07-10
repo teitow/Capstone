@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.media.MediaPlayer
@@ -35,7 +36,7 @@ import kotlin.math.abs
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextToSpeech.OnInitListener {
+class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var camera: Camera? = null
     private lateinit var preview: Preview
@@ -50,15 +51,22 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
     private lateinit var cameraProvider: ProcessCameraProvider
     private lateinit var cameraSelector: CameraSelector
     private var descriptionMode: String = "BASIC"
+    private lateinit var prefs: SharedPreferences
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale.KOREAN)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("TTS", "Korean language is not supported.")
-            } else {
-                isTTSInitialized = true
-                speak("색상을 인식하려면 사진을 찍어주세요.", "ID_INITIAL")
+            tts?.let {
+                val result = it.setLanguage(Locale.KOREAN)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Korean language is not supported.")
+                } else {
+                    isTTSInitialized = true
+                    val savedPitch = prefs.getFloat("pitch", 1.0f)
+                    val savedSpeed = prefs.getFloat("speed", 1.0f)
+                    it.setPitch(savedPitch)
+                    it.setSpeechRate(savedSpeed)
+                    speak("색상을 인식하려면 사진을 찍어주세요.", "ID_INITIAL")
+                }
             }
         } else {
             Log.e("TTS", "Initialization failed.")
@@ -69,6 +77,7 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_color_recognition)
         tts = TextToSpeech(this, this)
+        prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         imageView = findViewById(R.id.imageView)
         colorTextView = findViewById(R.id.colorTextView)
         cameraClickSound = MediaPlayer.create(this, R.raw.camera_click)
@@ -85,9 +94,7 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
         initializeCamera()
         setupTTS()
 
-        // SharedPreferences에서 모드를 가져옴
-        val sharedPref = getSharedPreferences("ColorModePref", MODE_PRIVATE)
-        descriptionMode = sharedPref.getString("MODE", "BASIC") ?: "BASIC"
+        descriptionMode = intent.getStringExtra("MODE") ?: "BASIC"
     }
 
     private fun initializeCamera() {
@@ -183,7 +190,7 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
                 val pixel = bitmap.getPixel(centerX, centerY)
                 val hsv = FloatArray(3)
                 Color.colorToHSV(pixel, hsv)
-                val colorName = getColorNameHSV(hue = hsv[0], saturation = hsv[1], value = hsv[2])
+                val colorName = getColorNameHSV(hsv[0], hsv[1], hsv[2])
                 runOnUiThread {
                     colorTextView.text = "인식된 색상: $colorName"
                     colorTextView.visibility = View.VISIBLE
@@ -204,7 +211,7 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
 
-        val base64Image = encodeImageToBase64(photoFile, width = 512, height = 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
+        val base64Image = encodeImageToBase64(photoFile, 512, 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
         val descriptionText = "시각 장애인을 위한 설명이 필요합니다, 지금 현재 카메라가 촬영하고 있는 물체중에 카메라에 가장 가까운 물체의 색상을 서술해주세요."
 
         val json = JSONObject().apply {
@@ -283,6 +290,7 @@ class ColorRecognitionActivity<ExecutionException> : AppCompatActivity(), TextTo
         if (hue < 240) return "남색"
         if (hue < 280) return "보라"
         return if (hue < 330) "핑크" else "색상을 알 수 없습니다. 다시 한번 촬영해주세요"
+        // 일부 색상이 겹치거나 구분이 모호할 경우
     }
 
     private fun resetToInitialView() {

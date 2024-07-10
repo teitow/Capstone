@@ -102,14 +102,30 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            tts.language = Locale.KOREAN
-            speakText("날씨 정보를 불러오는 중입니다.") {
-                // Call next speakText in the queue if needed
+            // SharedPreferences에서 TTS 설정 불러오기
+            val prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
+            val savedPitch = prefs.getFloat("pitch", 1.0f)
+            val savedSpeed = prefs.getFloat("speed", 1.0f)
+
+            tts?.let {
+                it.language = Locale.KOREAN
+                it.setPitch(savedPitch) // 저장된 피치 적용
+                it.setSpeechRate(savedSpeed) // 저장된 속도 적용
+            }
+
+            val result = tts?.setLanguage(Locale.KOREAN)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "Korean language is not supported.")
+            } else {
+                speakText("날씨 정보를 불러오는 중입니다.") {
+                    // Call next speakText in the queue if needed
+                }
             }
         } else {
             Toast.makeText(this, "TTS 초기화 실패", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     private fun getLocationName(lat: Double, lon: Double): String {
         val geocoder = Geocoder(this, Locale.getDefault())
@@ -303,7 +319,12 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     override fun onPause() {
         super.onPause()
-        tts.stop() // MainActivity로 전환 시 TTS 멈추기
+        tts.stop() // 다른 Activity로 전환 시 TTS 멈추기
+    }
+
+    override fun onStop() {
+        super.onStop()
+        tts.stop() // 다른 Activity로 전환 시 TTS 멈추기
     }
 
     override fun onDestroy() {
