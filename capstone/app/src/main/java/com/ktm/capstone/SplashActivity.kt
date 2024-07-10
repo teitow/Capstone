@@ -4,7 +4,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
 import android.util.Log
@@ -14,9 +16,16 @@ import java.util.Locale
 
 class SplashActivity : Activity(), OnInitListener {
     private var tts: TextToSpeech? = null
+    private var isPermissionsRequested = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.splash_screen)
+
+        if (savedInstanceState != null) {
+            isPermissionsRequested = savedInstanceState.getBoolean("isPermissionsRequested", false)
+        }
+
         tts = TextToSpeech(this, this)
     }
 
@@ -35,19 +44,18 @@ class SplashActivity : Activity(), OnInitListener {
 
     private fun checkPermissionsAndProceed() {
         if (!hasPermissions(REQUIRED_PERMISSIONS)) {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+            if (!isPermissionsRequested) {
+                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+                isPermissionsRequested = true
+            }
         } else {
-            proceedToMain()
+            checkWriteSettingsPermissionAndProceed()
         }
     }
 
     private fun hasPermissions(permissions: Array<String>): Boolean {
         for (permission in permissions) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    permission
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 return false
             }
         }
@@ -62,7 +70,7 @@ class SplashActivity : Activity(), OnInitListener {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
             if (allPermissionsGranted(grantResults)) {
-                proceedToMain()
+                checkWriteSettingsPermissionAndProceed()
             } else {
                 tts!!.speak(
                     "필요한 권한을 얻지 못하여 애플리케이션을 사용할 수 없습니다. 애플리케이션을 종료합니다.",
@@ -84,6 +92,33 @@ class SplashActivity : Activity(), OnInitListener {
         return true
     }
 
+    private fun checkWriteSettingsPermissionAndProceed() {
+        if (!Settings.System.canWrite(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+            intent.data = Uri.parse("package:$packageName")
+            startActivityForResult(intent, WRITE_SETTINGS_REQUEST_CODE)
+        } else {
+            proceedToMain()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == WRITE_SETTINGS_REQUEST_CODE) {
+            if (Settings.System.canWrite(this)) {
+                proceedToMain()
+            } else {
+                tts!!.speak(
+                    "필요한 설정 권한을 얻지 못하여 애플리케이션을 사용할 수 없습니다. 애플리케이션을 종료합니다.",
+                    TextToSpeech.QUEUE_FLUSH,
+                    null,
+                    null
+                )
+                finish() // 권한 거부 시 앱 종료
+            }
+        }
+    }
+
     private fun proceedToMain() {
         val intent = Intent(this@SplashActivity, MainActivity::class.java)
         startActivity(intent)
@@ -98,12 +133,22 @@ class SplashActivity : Activity(), OnInitListener {
         super.onDestroy()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isPermissionsRequested", isPermissionsRequested)
+    }
+
     companion object {
         private const val PERMISSIONS_REQUEST_CODE = 1240
+        private const val WRITE_SETTINGS_REQUEST_CODE = 1241
         private val REQUIRED_PERMISSIONS = arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.INTERNET,
+            Manifest.permission.ACCESS_NETWORK_STATE
         )
     }
 }

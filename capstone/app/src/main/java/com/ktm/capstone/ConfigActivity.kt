@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
@@ -17,6 +18,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
+    private lateinit var prefs: SharedPreferences
     private var options = listOf(
         "TTS 속도",
         "다크 모드",
@@ -34,7 +36,14 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         supportActionBar?.title = "앱 환경 설정"
 
-        tts = TextToSpeech(this, this)
+        prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
+        val savedPitch = prefs.getFloat("pitch", 1.0f)
+        val savedSpeed = prefs.getFloat("speed", 1.0f)
+
+        tts = TextToSpeech(this, this).apply {
+            setPitch(savedPitch)
+            setSpeechRate(savedSpeed)
+        }
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -62,7 +71,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     updateSelection()
                 } else {
                     // 상하 슬라이드 및 하상 슬라이드 처리
-                    finish()
+                    navigateToMainActivity()
                 }
                 return true
             }
@@ -104,6 +113,13 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (::tts.isInitialized && tts.isSpeaking) {
             tts.stop()
         }
+    }
+
+    private fun navigateToMainActivity() {
+        stopTTS()
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     override fun onInit(status: Int) {
