@@ -40,12 +40,20 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
     private var isDetailedMode: Boolean = false
+    private var yStart: Float = 0f
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_weather_recognition)
+
+        // 다크 모드 설정 확인
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        setTheme(isDarkMode)
+
         supportActionBar?.title = "날씨 확인"
 
+        // View 초기화는 setContentView 이후에 진행
         temperatureTextView = findViewById(R.id.temperatureTextView)
         feelsLikeTextView = findViewById(R.id.feelsLikeTextView)
         rainProbabilityTextView = findViewById(R.id.rainProbabilityTextView)
@@ -68,6 +76,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 if (e1 != null && e2 != null) {
                     val deltaY = e2.y - e1.y
                     if (Math.abs(deltaY) > 100 && Math.abs(velocityY) > 100) {
+                        stopTTS() // TTS 중단
                         val intent = Intent(this@WeatherRecognitionActivity, MainActivity::class.java)
                         startActivity(intent)
                         return true
@@ -104,10 +113,18 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             }
         }
 
-        // Load mode from SharedPreferences
+        // SharedPreferences에서 모드 불러오기
         val sharedPref = getSharedPreferences("WeatherModePref", Context.MODE_PRIVATE)
         val mode = sharedPref.getString("MODE", "BASIC")
         isDetailedMode = mode == "DETAILED"
+    }
+
+    private fun setTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            setContentView(R.layout.activity_weather_recognition_dark)
+        } else {
+            setContentView(R.layout.activity_weather_recognition)
+        }
     }
 
     override fun onInit(status: Int) {
@@ -230,7 +247,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                     tomorrowWeatherTextView.text = tomorrowWeatherText
                     tomorrowWeatherTextView.setTypeface(null, android.graphics.Typeface.BOLD)
 
-                    // Adjust visibility based on mode
+                    // 모드에 따라 가시성 조정
                     if (isDetailedMode) {
                         feelsLikeTextView.visibility = TextView.VISIBLE
                         windSpeedTextView.visibility = TextView.VISIBLE
@@ -259,8 +276,6 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             Log.e("WeatherRecognition", "Error parsing weather data", e)
         }
     }
-
-
 
     private fun translateWeatherDescription(description: String): String {
         return when (description) {
@@ -479,26 +494,46 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         }
     }
 
+    private fun stopTTS() {
+        if (tts.isSpeaking) {
+            tts.stop()
+        }
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         gestureDetector.onTouchEvent(event)
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_DOWN) {
+            yStart = event.y
+        } else if (action == MotionEvent.ACTION_UP) {
+            val yEnd = event.y
+            if (Math.abs(yEnd - yStart) > 100) {
+                stopTTS() // 슬라이드 시 TTS 중단
+                navigateToMainActivity()
+            }
+        }
         return super.onTouchEvent(event)
+    }
+
+    private fun navigateToMainActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     override fun onPause() {
         super.onPause()
-        tts.stop() // 다른 Activity로 전환 시 TTS 멈추기
+        stopTTS() // 다른 Activity로 전환 시 TTS 멈추기
     }
 
     override fun onStop() {
         super.onStop()
-        tts.stop() // 다른 Activity로 전환 시 TTS 멈추기
+        stopTTS() // 다른 Activity로 전환 시 TTS 멈추기
     }
 
     override fun onDestroy() {
-        if (tts != null) {
-            tts.stop()
-            tts.shutdown()
-        }
+        tts.stop()
+        tts.shutdown()
         super.onDestroy()
     }
 }

@@ -67,7 +67,11 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_barcode_recognition)
+
+        // 다크 모드 설정 확인
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        setTheme(isDarkMode)
 
         tts = TextToSpeech(this, this)
         resultTextView = findViewById(R.id.resultTextView)
@@ -90,6 +94,15 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         val sharedPref = getSharedPreferences("BarcodeModePref", Context.MODE_PRIVATE)
         mode = sharedPref.getString("MODE", "BASIC") ?: "BASIC"
     }
+
+    private fun setTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            setContentView(R.layout.activity_barcode_recognition_dark)
+        } else {
+            setContentView(R.layout.activity_barcode_recognition)
+        }
+    }
+
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED

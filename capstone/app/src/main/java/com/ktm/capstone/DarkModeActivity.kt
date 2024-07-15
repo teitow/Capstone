@@ -1,5 +1,129 @@
 package com.ktm.capstone
 
-class DarkModeActivity {
+import android.content.Context
+import android.os.Bundle
+import android.speech.tts.TextToSpeech
+import android.view.GestureDetector
+import android.view.MotionEvent
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
+import kotlin.math.abs
 
+class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+
+    private lateinit var tts: TextToSpeech
+    private lateinit var gestureDetector: GestureDetector
+    private lateinit var optionsRecyclerView: RecyclerView
+    private lateinit var adapter: OptionsAdapter
+    private var options = listOf(
+        "라이트 모드",
+        "다크 모드"
+    )
+    private var selectedPosition = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_dark_mode)
+
+        supportActionBar?.title = "모드 선택"
+
+        tts = TextToSpeech(this, this)
+
+        optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
+        optionsRecyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = OptionsAdapter(options)
+        optionsRecyclerView.adapter = adapter
+
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                executeOption(selectedPosition)
+                return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (abs(velocityX) > abs(velocityY)) {
+                    if (velocityX > 0) {
+                        selectedPosition = (selectedPosition + 1) % options.size
+                    } else {
+                        selectedPosition = (selectedPosition - 1 + options.size) % options.size
+                    }
+                    updateSelection()
+                } else {
+                    finish()
+                }
+                return true
+            }
+        })
+
+        optionsRecyclerView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            true
+        }
+
+        // 초기 선택 상태 업데이트
+        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = sharedPref.getBoolean("DARK_MODE", false)
+        selectedPosition = if (isDarkMode) 1 else 0
+        updateSelection()
+    }
+
+    private fun updateSelection() {
+        adapter.setSelectedPosition(selectedPosition)
+        speakOption(options[selectedPosition])
+    }
+
+    private fun executeOption(position: Int) {
+        stopTTS()
+        val isDarkMode = position == 1
+        saveMode(isDarkMode)
+        finish()
+    }
+
+    private fun saveMode(isDarkMode: Boolean) {
+        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putBoolean("DARK_MODE", isDarkMode)
+            apply()
+        }
+    }
+
+    private fun speakOption(option: String) {
+        stopTTS()
+        if (::tts.isInitialized) {
+            tts.speak(option, TextToSpeech.QUEUE_FLUSH, null, "OptionSelected")
+        }
+    }
+
+    private fun stopTTS() {
+        if (::tts.isInitialized && tts.isSpeaking) {
+            tts.stop()
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.KOREAN
+            tts.speak(
+                "좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                TextToSpeech.QUEUE_FLUSH,
+                null,
+                "InitialInstructions"
+            )
+        }
+    }
+
+    override fun onDestroy() {
+        if (::tts.isInitialized) {
+            tts.stop()
+            tts.shutdown()
+        }
+        super.onDestroy()
+    }
 }

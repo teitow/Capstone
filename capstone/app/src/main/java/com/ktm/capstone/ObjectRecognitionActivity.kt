@@ -1,5 +1,6 @@
 package com.ktm.capstone
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -74,7 +75,11 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_object_recognition)
+
+        // 다크 모드 설정 확인
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        setTheme(isDarkMode)
 
         supportActionBar?.title = "객체 인식"
         tts = TextToSpeech(this, this)
@@ -97,6 +102,16 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
 
         descriptionMode = intent.getStringExtra("MODE") ?: "BASIC"
     }
+
+    private fun setTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            setContentView(R.layout.activity_object_recognition_dark)
+        } else {
+            setContentView(R.layout.activity_object_recognition)
+        }
+    }
+
+
 
     private fun setupTTS() {
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {

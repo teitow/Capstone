@@ -1,5 +1,6 @@
 package com.ktm.capstone
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Rect
@@ -86,7 +87,12 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_text_to_speech)
+
+        // 다크 모드 설정 확인
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        setTheme(isDarkMode)
+
         tts = TextToSpeech(this, this)
         koreanRecognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
         latinRecognizer = TextRecognition.getClient(TextRecognizerOptions.Builder().build())
@@ -107,6 +113,13 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
         setupTTS()
     }
 
+    private fun setTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            setContentView(R.layout.activity_text_to_speech_dark)
+        } else {
+            setContentView(R.layout.activity_text_to_speech)
+        }
+    }
 
 
     private fun setupTTS() {
