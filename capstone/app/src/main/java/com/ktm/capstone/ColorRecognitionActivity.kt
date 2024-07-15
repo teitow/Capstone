@@ -1,5 +1,6 @@
 package com.ktm.capstone
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -75,7 +76,12 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_color_recognition)
+
+        // 다크 모드 설정 확인
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        setTheme(isDarkMode)
+
         tts = TextToSpeech(this, this)
         prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         imageView = findViewById(R.id.imageView)
@@ -96,6 +102,15 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
 
         descriptionMode = intent.getStringExtra("MODE") ?: "BASIC"
     }
+
+    private fun setTheme(isDarkMode: Boolean) {
+        if (isDarkMode) {
+            setContentView(R.layout.activity_color_recognition_dark)
+        } else {
+            setContentView(R.layout.activity_color_recognition)
+        }
+    }
+
 
     private fun initializeCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)

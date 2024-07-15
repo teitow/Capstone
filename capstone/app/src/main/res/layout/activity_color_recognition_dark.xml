@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".BarcodeRecognitionActivity">
+    tools:context=".ColorRecognitionActivity">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
@@ -11,20 +11,27 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/image_view_description"
         android:visibility="gone" />
 
+    <View
+        android:id="@+id/color_detection_area"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@drawable/circle_overlay"
+        android:layout_centerInParent="true" />
+
     <TextView
-        android:id="@+id/resultTextView"
+        android:id="@+id/colorTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:textSize="30sp"
-        android:textColor="#000000"
-        android:background="#CCFFFFFF"
+        android:textColor="#FFFFFF"
+        android:background="#CC000000"
         android:padding="16dp"
         android:visibility="gone" />
-
 </RelativeLayout>
