@@ -1,11 +1,12 @@
 package com.ktm.capstone
 
 import android.content.Context
-import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -32,10 +33,16 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         tts = TextToSpeech(this, this)
 
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = OptionsAdapter(options)
+        adapter = OptionsAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
+
+        val layout = findViewById<LinearLayout>(R.id.root_layout)
+        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {

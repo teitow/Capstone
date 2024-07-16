@@ -122,6 +122,7 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
     }
 
 
+
     private fun setupTTS() {
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String) {

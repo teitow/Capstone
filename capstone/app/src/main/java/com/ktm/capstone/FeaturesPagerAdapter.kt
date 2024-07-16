@@ -2,16 +2,14 @@ package com.ktm.capstone
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Typeface
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.viewpager.widget.PagerAdapter
 
 class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
-    private val imageIds = intArrayOf(
+    private val imageIdsLight = intArrayOf(
         R.drawable.object_recognition,
         R.drawable.text_to_speech,
         R.drawable.weather_recognition,
@@ -19,17 +17,18 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
         R.drawable.color_recognition,
         R.drawable.config
     )
-    private val descriptions = arrayOf(
-        "객체 인식",
-        "텍스트 음성 변환",
-        "날씨 확인",
-        "바코드 스캔",
-        "색상 인식",
-        "앱 환경 설정"
+
+    private val imageIdsDark = intArrayOf(
+        R.drawable.object_recognition_dark,
+        R.drawable.text_to_speech_dark,
+        R.drawable.weather_recognition_dark,
+        R.drawable.barcode_recognition_dark,
+        R.drawable.color_recognition_dark,
+        R.drawable.config_dark
     )
 
     override fun getCount(): Int {
-        return imageIds.size
+        return imageIdsLight.size
     }
 
     override fun isViewFromObject(view: View, `object`: Any): Boolean {
@@ -37,7 +36,6 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
     }
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
-        // 이미지와 텍스트를 포함하는 레이아웃을 생성합니다.
         val layout = LinearLayout(mContext)
         layout.orientation = LinearLayout.VERTICAL
         layout.layoutParams = LinearLayout.LayoutParams(
@@ -45,26 +43,17 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
 
-        // 이미지뷰를 생성하고 레이아웃에 추가합니다.
+        // 다크 모드 여부에 따라 배경색을 설정
+        val sharedPref = mContext.getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = sharedPref.getBoolean("DARK_MODE", false)
+        val imageIds = if (isDarkMode) imageIdsDark else imageIdsLight
+
+        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
+
         val imageView = ImageView(mContext)
         imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
         imageView.setImageResource(imageIds[position])
         layout.addView(imageView)
-
-        // 텍스트뷰를 생성하고 레이아웃에 추가합니다.
-        val textView = TextView(mContext)
-        textView.text = descriptions[position]
-        textView.textSize = 50f // 텍스트 크기를 24sp로 설정
-        textView.setTypeface(null, Typeface.BOLD) // 텍스트를 굵게 설정
-        textView.textAlignment = View.TEXT_ALIGNMENT_CENTER
-        textView.setTextColor(Color.BLACK) // 텍스트 색상을 흰색으로 설정
-        textView.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        ).apply {
-            setMargins(0, -200, 0, 0) // 상단 마진을 -200dp로 설정하여 텍스트를 이미지와 더 가깝게 위치
-        }
-        layout.addView(textView)
 
         container.addView(layout, 0)
         return layout
@@ -75,6 +64,14 @@ class FeaturesPagerAdapter(private val mContext: Context) : PagerAdapter() {
     }
 
     fun getDescription(position: Int): String {
+        val descriptions = arrayOf(
+            "객체 인식",
+            "텍스트 음성 변환",
+            "날씨 확인",
+            "바코드 스캔",
+            "색상 인식",
+            "앱 환경 설정"
+        )
         return descriptions[position]
     }
 }

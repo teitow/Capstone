@@ -1,17 +1,24 @@
 package com.ktm.capstone
 
+import android.content.Context
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.TextToSpeech.OnInitListener
 import android.util.Log
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatDelegate
 import java.util.Locale
 
 class SplashActivity : Activity(), OnInitListener {
@@ -20,7 +27,28 @@ class SplashActivity : Activity(), OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 테마 적용
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+
         setContentView(R.layout.splash_screen)
+
+        // 다크 모드 여부 확인 및 이미지 설정
+        val splashLayout = findViewById<RelativeLayout>(R.id.splash_layout)
+        val splashImage = findViewById<ImageView>(R.id.splash_image)
+        if (isDarkMode) {
+            splashLayout.setBackgroundColor(Color.BLACK)
+            splashImage.setImageResource(R.drawable.splash_screen_dark)
+        } else {
+            splashLayout.setBackgroundColor(Color.WHITE)
+            splashImage.setImageResource(R.drawable.splash_screen)
+        }
 
         if (savedInstanceState != null) {
             isPermissionsRequested = savedInstanceState.getBoolean("isPermissionsRequested", false)
@@ -49,7 +77,9 @@ class SplashActivity : Activity(), OnInitListener {
                 isPermissionsRequested = true
             }
         } else {
-            checkWriteSettingsPermissionAndProceed()
+            Handler(Looper.getMainLooper()).postDelayed({
+                checkWriteSettingsPermissionAndProceed()
+            }, 800) // 800 밀리초 = 0.8초
         }
     }
 
@@ -98,7 +128,9 @@ class SplashActivity : Activity(), OnInitListener {
             intent.data = Uri.parse("package:$packageName")
             startActivityForResult(intent, WRITE_SETTINGS_REQUEST_CODE)
         } else {
-            proceedToMain()
+            Handler(Looper.getMainLooper()).postDelayed({
+                proceedToMain()
+            }, 800) // 800 밀리초 = 0.8초
         }
     }
 

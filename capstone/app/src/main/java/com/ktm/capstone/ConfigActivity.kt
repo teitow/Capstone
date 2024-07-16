@@ -1,11 +1,14 @@
 package com.ktm.capstone
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -45,10 +48,16 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             setSpeechRate(savedSpeed)
         }
 
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = OptionsAdapter(options)
+        adapter = OptionsAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
+
+        val layout = findViewById<LinearLayout>(R.id.activity_config_layout)
+        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -81,6 +90,21 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             gestureDetector.onTouchEvent(event)
             true
         }
+
+        // RecyclerView의 기본 터치 이벤트를 막기 위해 onInterceptTouchEvent 오버라이드
+        optionsRecyclerView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                return true // 터치 이벤트를 차단하여 기본 클릭 동작을 막음
+            }
+
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
+                // 처리하지 않음
+            }
+
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                // 처리하지 않음
+            }
+        })
     }
 
     private fun updateSelection() {

@@ -20,10 +20,15 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
     private var tts: TextToSpeech? = null
     private lateinit var gestureDetector: GestureDetector
     private var prefs: SharedPreferences? = null
+    private var hasShownInitialInstruction = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        if (savedInstanceState != null) {
+            hasShownInitialInstruction = savedInstanceState.getBoolean("hasShownInitialInstruction", false)
+        }
 
         viewPager = findViewById(R.id.viewPager)
         adapter = FeaturesPagerAdapter(this)
@@ -45,12 +50,15 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
                 tts?.setLanguage(Locale.KOREAN)
                 tts?.setPitch(savedPitch) // 저장된 피치 적용
                 tts?.setSpeechRate(savedSpeed) // 저장된 속도 적용
-                tts?.speak(
-                    "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
-                    TextToSpeech.QUEUE_FLUSH,
-                    null,
-                    "InitialInstruction"
-                )
+                if (!hasShownInitialInstruction) {
+                    tts?.speak(
+                        "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                        TextToSpeech.QUEUE_FLUSH,
+                        null,
+                        "InitialInstruction"
+                    )
+                    hasShownInitialInstruction = true
+                }
             }
         }
 
@@ -142,5 +150,10 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
             tts!!.shutdown()
         }
         super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("hasShownInitialInstruction", hasShownInitialInstruction)
     }
 }

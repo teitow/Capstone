@@ -58,7 +58,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 Log.e("TTS", "Korean language is not supported.")
             } else {
                 isTTSInitialized = true
-                speak("화면을 두 번 누르면 바코드 인식이 시작됩니다. 카메라를 움직이다 바코드에 맞추면 자동으로 인식됩니다.", "ID_INITIAL")
+                speak("화면을 두 번 누르면 바코드 인식이 시작됩니다. 세로로 스캔이 되니 물건의 바코드를 세로로 돌리거나 핸드폰을 가로로 돌려주세요. 카메라를 움직이다 바코드에 맞추면 자동으로 인식됩니다.", "ID_INITIAL")
             }
         } else {
             Log.e("TTS", "Initialization failed.")
