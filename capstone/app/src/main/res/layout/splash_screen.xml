@@ -1,4 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splash_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center">
@@ -11,18 +12,7 @@
         android:adjustViewBounds="true"
         android:layout_centerHorizontal="true"
         android:scaleType="centerInside"
-        android:maxWidth="200dp"
-        android:maxHeight="200dp"/>
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/splash_image"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="0dp"
-        android:text="비전 토크"
-        android:textSize="44sp"
-        android:textColor="#000000" />
+        android:maxWidth="350dp"
+        android:maxHeight="350dp"/>
 
 </RelativeLayout>

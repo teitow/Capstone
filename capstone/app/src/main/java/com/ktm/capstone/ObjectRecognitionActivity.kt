@@ -112,7 +112,6 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
     }
 
 
-
     private fun setupTTS() {
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String) {

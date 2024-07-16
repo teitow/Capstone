@@ -1,11 +1,12 @@
 package com.ktm.capstone
 
 import android.content.Context
-import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -32,10 +33,16 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         tts = TextToSpeech(this, this)
 
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = OptionsAdapter(options)
+        adapter = OptionsAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
+
+        val layout = findViewById<LinearLayout>(R.id.root_layout)
+        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -67,6 +74,21 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             gestureDetector.onTouchEvent(event)
             true
         }
+
+        optionsRecyclerView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                return true // 터치 이벤트를 차단하여 기본 클릭 동작을 막음
+            }
+
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
+                // 처리하지 않음
+            }
+
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
+                // 처리하지 않음
+            }
+        })
+
     }
 
     private fun updateSelection() {
@@ -75,6 +97,7 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun executeOption(position: Int) {
+        stopTTS()
         val selectedOption = options[position]
         val mode = if (selectedOption == "기본 모드") "BASIC" else "DETAILED"
         saveMode(mode)
@@ -87,12 +110,6 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putString("MODE", mode)
             apply()
         }
-    }
-
-    private fun navigateToWeatherRecognition(isDetailMode: Boolean) {
-        val intent = Intent(this, WeatherRecognitionActivity::class.java)
-        intent.putExtra("isDetailMode", isDetailMode)
-        startActivity(intent)
     }
 
     private fun speakOption(option: String) {
