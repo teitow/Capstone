@@ -139,6 +139,9 @@ dependencies {
     // ML Kit Barcode Scanning
     implementation 'com.google.mlkit:barcode-scanning:17.2.0'
 
+    // ConstraintLayout 라이브러리
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+
     // JSON 처리
     implementation 'org.json:json:20211205'
 
