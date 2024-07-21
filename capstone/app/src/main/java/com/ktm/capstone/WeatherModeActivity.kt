@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 import kotlin.math.abs
+import android.widget.TextView
 
 class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
@@ -35,6 +36,8 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        val titleTextView = findViewById<TextView>(R.id.titleTextView)
+        titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)

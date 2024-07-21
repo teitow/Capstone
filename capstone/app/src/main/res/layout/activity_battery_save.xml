@@ -9,8 +9,8 @@
         android:id="@+id/titleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="배터리 세이브 모드"
-        android:textSize="24sp"
+        android:text="배터리 세이브"
+        android:textSize="48sp"
         android:textStyle="bold"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp" />
