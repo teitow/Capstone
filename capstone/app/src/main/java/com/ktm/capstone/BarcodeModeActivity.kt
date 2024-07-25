@@ -20,6 +20,7 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
+    private lateinit var currentModeTextView: TextView
     private var options = listOf(
         "기본 모드",
         "디테일 모드"
@@ -38,6 +39,11 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         val titleTextView = findViewById<TextView>(R.id.titleTextView)
         titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+
+        currentModeTextView = findViewById(R.id.currentModeTextView)
+        currentModeTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+        currentModeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+        updateCurrentModeText()
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -79,6 +85,12 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun updateCurrentModeText() {
+        val sharedPref = getSharedPreferences("BarcodeModePref", Context.MODE_PRIVATE)
+        val mode = sharedPref.getString("MODE", "기본 모드")
+        currentModeTextView.text = "현재 모드 : $mode"
+    }
+
     private fun updateSelection() {
         adapter.setSelectedPosition(selectedPosition)
         speakOption(options[selectedPosition])
@@ -89,6 +101,7 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val selectedOption = options[position]
         val mode = if (selectedOption == "기본 모드") "BASIC" else "DETAILED"
         saveMode(mode)
+        updateCurrentModeText()
         finish()
     }
 
@@ -115,7 +128,12 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
+            val sharedPref = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
+            val pitch = sharedPref.getFloat("pitch", 1.0f)
+            val speed = sharedPref.getFloat("speed", 1.0f)
             tts.language = Locale.KOREAN
+            tts.setPitch(pitch)
+            tts.setSpeechRate(speed)
             tts.speak(
                 "좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
                 TextToSpeech.QUEUE_FLUSH,

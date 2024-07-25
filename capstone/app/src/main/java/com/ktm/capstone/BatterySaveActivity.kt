@@ -1,8 +1,11 @@
 package com.ktm.capstone
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -20,9 +23,10 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
+    private lateinit var currentModeTextView: TextView
     private var options = listOf(
         "기본 모드",
-        "디테일 모드"
+        "절전 모드"
     )
     private var selectedPosition = 0
 
@@ -34,10 +38,21 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         tts = TextToSpeech(this, this)
 
+        if (!Settings.System.canWrite(this)) {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
+        }
+
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         val titleTextView = findViewById<TextView>(R.id.titleTextView)
         titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+
+        currentModeTextView = findViewById(R.id.currentModeTextView)
+        currentModeTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+        currentModeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
+        updateCurrentModeText()
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
@@ -92,6 +107,16 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         })
 
+        // 원래 밝기 값 저장
+        if (!isOriginalBrightnessSaved()) {
+            saveOriginalBrightness(getScreenBrightness())
+        }
+    }
+
+    private fun updateCurrentModeText() {
+        val sharedPref = getSharedPreferences("BatterySaveModePref", Context.MODE_PRIVATE)
+        val mode = sharedPref.getString("MODE", "기본 모드")
+        currentModeTextView.text = "현재 모드 : $mode"
     }
 
     private fun updateSelection() {
@@ -102,8 +127,16 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun executeOption(position: Int) {
         stopTTS()
         val selectedOption = options[position]
-        val mode = if (selectedOption == "기본 모드") "BASIC" else "DETAILED"
+        val mode = if (selectedOption == "기본 모드") "BASIC" else "POWER_SAVE"
         saveMode(mode)
+        updateCurrentModeText()
+
+        if (mode == "POWER_SAVE") {
+            setScreenBrightness(0.1f) // 밝기를 최소화
+        } else {
+            setScreenBrightness(getSavedOriginalBrightness()) // 원래 밝기로 복원
+        }
+
         finish()
     }
 
@@ -113,6 +146,24 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             putString("MODE", mode)
             apply()
         }
+    }
+
+    private fun isOriginalBrightnessSaved(): Boolean {
+        val sharedPref = getSharedPreferences("BrightnessPref", Context.MODE_PRIVATE)
+        return sharedPref.contains("ORIGINAL_BRIGHTNESS")
+    }
+
+    private fun saveOriginalBrightness(brightness: Float) {
+        val sharedPref = getSharedPreferences("BrightnessPref", Context.MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putFloat("ORIGINAL_BRIGHTNESS", brightness)
+            apply()
+        }
+    }
+
+    private fun getSavedOriginalBrightness(): Float {
+        val sharedPref = getSharedPreferences("BrightnessPref", Context.MODE_PRIVATE)
+        return sharedPref.getFloat("ORIGINAL_BRIGHTNESS", 1.0f)
     }
 
     private fun speakOption(option: String) {
@@ -130,7 +181,12 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
+            val sharedPref = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
+            val pitch = sharedPref.getFloat("pitch", 1.0f)
+            val speed = sharedPref.getFloat("speed", 1.0f)
             tts.language = Locale.KOREAN
+            tts.setPitch(pitch)
+            tts.setSpeechRate(speed)
             tts.speak(
                 "좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
                 TextToSpeech.QUEUE_FLUSH,
@@ -146,5 +202,33 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts.shutdown()
         }
         super.onDestroy()
+    }
+
+    private fun getScreenBrightness(): Float {
+        return try {
+            val brightness = Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+            brightness / 255.0f
+        } catch (e: Settings.SettingNotFoundException) {
+            1.0f // 기본 밝기
+        }
+    }
+
+    private fun setScreenBrightness(brightness: Float) {
+        if (Settings.System.canWrite(this)) {
+            val cResolver = contentResolver
+            val brightnessInt = (brightness * 255).toInt()
+            Settings.System.putInt(
+                cResolver,
+                Settings.System.SCREEN_BRIGHTNESS,
+                brightnessInt
+            )
+            val layoutParams = window.attributes
+            layoutParams.screenBrightness = brightness
+            window.attributes = layoutParams
+        } else {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
+        }
     }
 }
