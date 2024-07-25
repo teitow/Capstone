@@ -130,7 +130,7 @@ class SplashActivity : Activity(), OnInitListener {
         } else {
             Handler(Looper.getMainLooper()).postDelayed({
                 proceedToMain()
-            }, 800) // 800 밀리초 = 0.8초
+            }, 400) // 800 밀리초 = 0.8초
         }
     }
 
