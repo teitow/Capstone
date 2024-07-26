@@ -142,14 +142,16 @@ class WeatherModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val sharedPref = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
-            val pitch = sharedPref.getFloat("pitch", 1.0f)
-            val speed = sharedPref.getFloat("speed", 1.0f)
+            val sharedPref = getSharedPreferences("WeatherModePref", Context.MODE_PRIVATE)
+            val mode = sharedPref.getString("MODE", "기본 모드")
+            val sharedPrefTTS = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
+            val pitch = sharedPrefTTS.getFloat("pitch", 1.0f)
+            val speed = sharedPrefTTS.getFloat("speed", 1.0f)
             tts.language = Locale.KOREAN
             tts.setPitch(pitch)
             tts.setSpeechRate(speed)
             tts.speak(
-                "좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                "현재 날씨 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "InitialInstructions"
