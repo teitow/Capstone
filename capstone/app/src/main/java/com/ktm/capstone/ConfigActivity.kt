@@ -76,9 +76,9 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ): Boolean {
                 if (abs(velocityX) > abs(velocityY)) {
                     if (velocityX > 0) {
-                        selectedPosition = (selectedPosition + 1) % options.size
-                    } else {
                         selectedPosition = (selectedPosition - 1 + options.size) % options.size
+                    } else {
+                        selectedPosition = (selectedPosition + 1) % options.size
                     }
                     updateSelection()
                 } else {
