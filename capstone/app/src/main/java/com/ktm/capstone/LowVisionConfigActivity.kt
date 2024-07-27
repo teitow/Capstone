@@ -16,7 +16,7 @@ import java.util.Locale
 import kotlin.math.abs
 import android.widget.TextView
 
-class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener, GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
 
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
@@ -37,7 +37,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_config)
+        setContentView(R.layout.activity_low_vision_config)
 
         supportActionBar?.title = "앱 환경 설정"
 
@@ -60,35 +60,10 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         adapter = OptionsAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
 
-        val layout = findViewById<LinearLayout>(R.id.activity_config_layout)
+        val layout = findViewById<LinearLayout>(R.id.activity_low_vision_config_layout)
         layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDoubleTap(e: MotionEvent): Boolean {
-                executeOption(selectedPosition)
-                return true
-            }
-
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (abs(velocityX) > abs(velocityY)) {
-                    if (velocityX > 0) {
-                        selectedPosition = (selectedPosition - 1 + options.size) % options.size
-                    } else {
-                        selectedPosition = (selectedPosition + 1) % options.size
-                    }
-                    updateSelection()
-                } else {
-                    // 상하 슬라이드 및 하상 슬라이드 처리
-                    navigateToMainActivity()
-                }
-                return true
-            }
-        })
+        gestureDetector = GestureDetector(this, this)
 
         optionsRecyclerView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
@@ -155,7 +130,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             tts.language = Locale.KOREAN
             tts.speak(
-                "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                "설정을 선택하려면 탭, 항목을 변경하려면 더블탭하세요.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "InitialInstructions"
@@ -170,4 +145,46 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         super.onDestroy()
     }
+
+    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+        executeOption(selectedPosition)
+        return true
+    }
+
+    override fun onDoubleTap(e: MotionEvent): Boolean {
+        selectedPosition = (selectedPosition + 1) % options.size
+        updateSelection()
+        return true
+    }
+
+    override fun onFling(
+        p0: MotionEvent?,
+        e1: MotionEvent,
+        velocityX: Float,
+        velocityY: Float
+    ): Boolean {
+        if (abs(velocityX) > abs(velocityY)) {
+            if (velocityX > 0) {
+                selectedPosition = (selectedPosition - 1 + options.size) % options.size
+            } else {
+                selectedPosition = (selectedPosition + 1) % options.size
+            }
+            updateSelection()
+        } else {
+            navigateToMainActivity()
+        }
+        return true
+    }
+
+    override fun onDown(e: MotionEvent): Boolean = true
+    override fun onShowPress(e: MotionEvent) {}
+    override fun onSingleTapUp(e: MotionEvent): Boolean = false
+    override fun onScroll(
+        p0: MotionEvent?,
+        e1: MotionEvent,
+        distanceX: Float,
+        distanceY: Float
+    ): Boolean = false
+    override fun onLongPress(e: MotionEvent) {}
+    override fun onDoubleTapEvent(e: MotionEvent): Boolean = false
 }

@@ -119,5 +119,21 @@
             android:exported="true">
         </activity>
 
+        <activity
+            android:name=".LowVisionConfigActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".LowVisionMainActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".LowVisionModeActivity"
+            android:exported="true">
+        </activity>
+
+
     </application>
 </manifest>
