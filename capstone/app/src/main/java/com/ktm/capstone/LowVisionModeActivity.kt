@@ -13,8 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 import kotlin.math.abs
 import android.widget.TextView
+import android.content.Intent
 
-class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class LowVisionModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
@@ -22,14 +23,14 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var adapter: OptionsAdapter
     private lateinit var currentModeTextView: TextView
     private var options = listOf(
-        "라이트 모드",
-        "다크 모드"
+        "전맹 모드",
+        "저시력 모드"
     )
     private var selectedPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_dark_mode)
+        setContentView(R.layout.activity_low_vision_mode)
 
         supportActionBar?.title = "모드 선택"
 
@@ -99,14 +100,14 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         })
 
         // 초기 선택 상태 업데이트
-        selectedPosition = if (isDarkMode) 1 else 0
+        selectedPosition = if (isLowVisionModeEnabled()) 1 else 0
         updateSelection()
     }
 
     private fun updateCurrentModeText() {
-        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
-        val isDarkMode = sharedPref.getBoolean("DARK_MODE", false)
-        val mode = if (isDarkMode) "다크 모드" else "라이트 모드"
+        val sharedPref = getSharedPreferences("LowVisionModePref", Context.MODE_PRIVATE)
+        val isLowVisionMode = sharedPref.getBoolean("LOW_VISION_MODE", false)
+        val mode = if (isLowVisionMode) "저시력 Low Vision" else "전맹 Blind"
         currentModeTextView.text = "현재 모드 : $mode"
     }
 
@@ -117,21 +118,21 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun executeOption(position: Int) {
         stopTTS()
-        val isDarkMode = position == 1
-        saveMode(isDarkMode)
+        val isLowVisionMode = position == 1
+        saveMode(isLowVisionMode)
         updateCurrentModeText()
         speakOption(".")
 
-        // 0.5초 후에 앱 종료
-        optionsRecyclerView.postDelayed({
-            System.exit(0)
-        }, 500)
+        // LowVisionMainActivity로 이동
+        val intent = Intent(this, LowVisionMainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
-    private fun saveMode(isDarkMode: Boolean) {
-        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+    private fun saveMode(isLowVisionMode: Boolean) {
+        val sharedPref = getSharedPreferences("LowVisionModePref", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
-            putBoolean("DARK_MODE", isDarkMode)
+            putBoolean("LOW_VISION_MODE", isLowVisionMode)
             apply()
         }
     }
@@ -149,11 +150,16 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun isLowVisionModeEnabled(): Boolean {
+        val sharedPref = getSharedPreferences("LowVisionModePref", Context.MODE_PRIVATE)
+        return sharedPref.getBoolean("LOW_VISION_MODE", false)
+    }
+
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val sharedPrefTheme = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
-            val isDarkMode = sharedPrefTheme.getBoolean("DARK_MODE", false)
-            val mode = if (isDarkMode) "다크 모드" else "라이트 모드"
+            val sharedPrefMode = getSharedPreferences("LowVisionModePref", Context.MODE_PRIVATE)
+            val isLowVisionMode = sharedPrefMode.getBoolean("LOW_VISION_MODE", false)
+            val mode = if (isLowVisionMode) "저시력 모드" else "전맹 모드"
             val sharedPrefTTS = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
             val pitch = sharedPrefTTS.getFloat("pitch", 1.0f)
             val speed = sharedPrefTTS.getFloat("speed", 1.0f)
@@ -161,7 +167,7 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts.setPitch(pitch)
             tts.setSpeechRate(speed)
             tts.speak(
-                "현재 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                "현재 모드는 $mode 입니다. 모드를 변경하려면 좌우로 슬라이드하고 더블탭하여 선택하세요. 원래 화면으로 돌아가려면 상하로 슬라이드하세요.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "InitialInstructions"
