@@ -5,10 +5,10 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import java.util.Locale
@@ -125,6 +125,7 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
             selectedSection = touchedSection
             updateSelection()
         }
+        Log.d("TouchEvent", "Touched coordinates: (${e.x}, ${e.y}), Selected section: $touchedSection")
         return true
     }
 
@@ -142,8 +143,13 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
         val sectionWidth = resources.displayMetrics.widthPixels / 2
         val sectionHeight = resources.displayMetrics.heightPixels / 3
 
+        Log.d("TouchEvent", "Screen Width: ${resources.displayMetrics.widthPixels}, Screen Height: ${resources.displayMetrics.heightPixels}")
+        Log.d("TouchEvent", "Section Width: $sectionWidth, Section Height: $sectionHeight")
+
         val column = (x / sectionWidth).toInt()
         val row = (y / sectionHeight).toInt()
+
+        Log.d("TouchEvent", "Column: $column, Row: $row")
 
         return row * 2 + column
     }
