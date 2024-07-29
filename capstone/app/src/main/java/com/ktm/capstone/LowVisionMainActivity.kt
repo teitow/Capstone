@@ -9,7 +9,8 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import android.widget.LinearLayout
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import java.util.Locale
 
@@ -20,7 +21,7 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
     private lateinit var gestureDetector: GestureDetector
     private var prefs: SharedPreferences? = null
     private var hasShownInitialInstruction = false
-    private var selectedSection = 0
+    private var selectedSection = -1
 
     private val sectionIds = intArrayOf(
         R.id.section1, R.id.section2, R.id.section3,
@@ -31,6 +32,12 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
         R.drawable.object_recognition, R.drawable.text_to_speech,
         R.drawable.weather_recognition, R.drawable.barcode_recognition,
         R.drawable.color_recognition, R.drawable.config
+    )
+
+    private val sectionImagesSelected = intArrayOf(
+        R.drawable.object_recognition_select, R.drawable.text_to_speech_select,
+        R.drawable.weather_recognition_select, R.drawable.barcode_recognition_select,
+        R.drawable.color_recognition_select, R.drawable.config_select
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,8 +71,8 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
 
         gestureDetector = GestureDetector(this, this)
         for (i in sectionIds.indices) {
-            findViewById<LinearLayout>(sectionIds[i]).setOnTouchListener { _, event: MotionEvent? ->
-                gestureDetector.onTouchEvent(event!!)
+            findViewById<FrameLayout>(sectionIds[i]).setOnTouchListener { v: View, event: MotionEvent ->
+                gestureDetector.onTouchEvent(event)
                 true
             }
         }
@@ -156,10 +163,11 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
 
     private fun updateSelection() {
         for (i in sectionIds.indices) {
-            val section = findViewById<LinearLayout>(sectionIds[i])
-            section.setBackgroundColor(
-                if (i == selectedSection) ContextCompat.getColor(this, R.color.selectedSection)
-                else ContextCompat.getColor(this, R.color.defaultSection)
+            val section = findViewById<FrameLayout>(sectionIds[i])
+            val imageView = section.getChildAt(0) as ImageView
+            imageView.setImageResource(
+                if (i == selectedSection) sectionImagesSelected[i]
+                else sectionImages[i]
             )
         }
         speakSectionDescription(selectedSection)
