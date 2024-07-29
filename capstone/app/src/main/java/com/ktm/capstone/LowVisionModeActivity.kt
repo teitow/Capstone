@@ -123,8 +123,11 @@ class LowVisionModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         updateCurrentModeText()
         speakOption(".")
 
-        // LowVisionMainActivity로 이동
-        val intent = Intent(this, LowVisionMainActivity::class.java)
+        val intent = if (isLowVisionMode) {
+            Intent(this, LowVisionMainActivity::class.java)
+        } else {
+            Intent(this, MainActivity::class.java)
+        }
         startActivity(intent)
         finish()
     }
