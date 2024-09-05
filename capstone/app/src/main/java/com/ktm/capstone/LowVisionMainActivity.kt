@@ -11,7 +11,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
-import androidx.core.content.ContextCompat
 import java.util.Locale
 
 class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
@@ -70,9 +69,19 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
         }
 
         gestureDetector = GestureDetector(this, this)
+        gestureDetector.setOnDoubleTapListener(this)
+
         for (i in sectionIds.indices) {
             findViewById<FrameLayout>(sectionIds[i]).setOnTouchListener { v: View, event: MotionEvent ->
                 gestureDetector.onTouchEvent(event)
+                val touchedSection = getTouchedSection(event.x, event.y, v)
+                if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_UP) {
+                    if (touchedSection != -1) {
+                        selectedSection = touchedSection
+                        updateSelection()
+                    }
+                    Log.d("TouchEvent", "Touched coordinates: (${event.x}, ${event.y}), Selected section: $touchedSection")
+                }
                 true
             }
         }
@@ -127,12 +136,6 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
 
     override fun onShowPress(e: MotionEvent) {}
     override fun onSingleTapUp(e: MotionEvent): Boolean {
-        val touchedSection = getTouchedSection(e.x, e.y)
-        if (touchedSection != -1) {
-            selectedSection = touchedSection
-            updateSelection()
-        }
-        Log.d("TouchEvent", "Touched coordinates: (${e.x}, ${e.y}), Selected section: $touchedSection")
         return true
     }
 
@@ -146,19 +149,19 @@ class LowVisionMainActivity : Activity(), GestureDetector.OnGestureListener,
         }
     }
 
-    private fun getTouchedSection(x: Float, y: Float): Int {
-        val sectionWidth = resources.displayMetrics.widthPixels / 2
-        val sectionHeight = resources.displayMetrics.heightPixels / 3
+    private fun getTouchedSection(x: Float, y: Float, view: View): Int {
+        val sectionWidth = view.width
+        val sectionHeight = view.height
 
-        Log.d("TouchEvent", "Screen Width: ${resources.displayMetrics.widthPixels}, Screen Height: ${resources.displayMetrics.heightPixels}")
-        Log.d("TouchEvent", "Section Width: $sectionWidth, Section Height: $sectionHeight")
+        Log.d("TouchEvent", "View Width: $sectionWidth, View Height: $sectionHeight")
 
         val column = (x / sectionWidth).toInt()
         val row = (y / sectionHeight).toInt()
 
         Log.d("TouchEvent", "Column: $column, Row: $row")
 
-        return row * 2 + column
+        val sectionIndex = sectionIds.indexOf(view.id)
+        return if (sectionIndex != -1) sectionIndex else -1
     }
 
     private fun updateSelection() {

@@ -11,7 +11,8 @@
         android:text="앱 환경 설정"
         android:textSize="24sp"
         android:gravity="center"
-        android:padding="16dp" />
+        android:padding="16dp"
+        android:textStyle="bold" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/optionsRecyclerView"

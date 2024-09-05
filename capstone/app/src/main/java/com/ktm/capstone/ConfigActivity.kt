@@ -30,8 +30,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "객체 모드",
         "색상 모드",
         "날씨 모드",
-        "바코드 모드",
-        "저시력 지원 모드"
+        "바코드 모드"
     )
     private var selectedPosition = 0
 
@@ -127,7 +126,6 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "색상 모드" -> startActivity(Intent(this, ColorModeActivity::class.java))
             "날씨 모드" -> startActivity(Intent(this, WeatherModeActivity::class.java))
             "바코드 모드" -> startActivity(Intent(this, BarcodeModeActivity::class.java))
-            "저시력 지원 모드" -> startActivity(Intent(this, LowVisionModeActivity::class.java))
         }
     }
 

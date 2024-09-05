@@ -16,12 +16,12 @@ import java.util.Locale
 import kotlin.math.abs
 import android.widget.TextView
 
-class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener, GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
-    private lateinit var adapter: OptionsAdapter
+    private lateinit var adapter: LowVisionOptionAdapter
     private lateinit var prefs: SharedPreferences
     private var options = listOf(
         "TTS 속도",
@@ -57,33 +57,54 @@ class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = OptionsAdapter(options, isDarkMode)
+        adapter = LowVisionOptionAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
 
         val layout = findViewById<LinearLayout>(R.id.activity_low_vision_config_layout)
         layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
-        gestureDetector = GestureDetector(this, this)
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                val view = optionsRecyclerView.findChildViewUnder(e.x, e.y)
+                view?.let {
+                    val position = optionsRecyclerView.getChildAdapterPosition(view)
+                    if (position != RecyclerView.NO_POSITION) {
+                        selectedPosition = position
+                        updateSelection()
+                    }
+                }
+                return true
+            }
+
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                executeOption(selectedPosition)
+                return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                if (abs(velocityX) > abs(velocityY)) {
+                    if (velocityX > 0) {
+                        selectedPosition = (selectedPosition - 1 + options.size) % options.size
+                    } else {
+                        selectedPosition = (selectedPosition + 1) % options.size
+                    }
+                    updateSelection()
+                } else {
+                    navigateToMainActivity()
+                }
+                return true
+            }
+        })
 
         optionsRecyclerView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
             true
         }
-
-        // RecyclerView의 기본 터치 이벤트를 막기 위해 onInterceptTouchEvent 오버라이드
-        optionsRecyclerView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
-            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                return true // 터치 이벤트를 차단하여 기본 클릭 동작을 막음
-            }
-
-            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
-                // 처리하지 않음
-            }
-
-            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {
-                // 처리하지 않음
-            }
-        })
     }
 
     private fun updateSelection() {
@@ -130,7 +151,7 @@ class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener
         if (status == TextToSpeech.SUCCESS) {
             tts.language = Locale.KOREAN
             tts.speak(
-                "설정을 선택하려면 탭, 항목을 변경하려면 더블탭하세요.",
+                "탭 해서 기능을 선택해주시고 더블 탭 해서 기능을 실행해주세요.",
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "InitialInstructions"
@@ -145,46 +166,4 @@ class LowVisionConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener
         }
         super.onDestroy()
     }
-
-    override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
-        executeOption(selectedPosition)
-        return true
-    }
-
-    override fun onDoubleTap(e: MotionEvent): Boolean {
-        selectedPosition = (selectedPosition + 1) % options.size
-        updateSelection()
-        return true
-    }
-
-    override fun onFling(
-        p0: MotionEvent?,
-        e1: MotionEvent,
-        velocityX: Float,
-        velocityY: Float
-    ): Boolean {
-        if (abs(velocityX) > abs(velocityY)) {
-            if (velocityX > 0) {
-                selectedPosition = (selectedPosition - 1 + options.size) % options.size
-            } else {
-                selectedPosition = (selectedPosition + 1) % options.size
-            }
-            updateSelection()
-        } else {
-            navigateToMainActivity()
-        }
-        return true
-    }
-
-    override fun onDown(e: MotionEvent): Boolean = true
-    override fun onShowPress(e: MotionEvent) {}
-    override fun onSingleTapUp(e: MotionEvent): Boolean = false
-    override fun onScroll(
-        p0: MotionEvent?,
-        e1: MotionEvent,
-        distanceX: Float,
-        distanceY: Float
-    ): Boolean = false
-    override fun onLongPress(e: MotionEvent) {}
-    override fun onDoubleTapEvent(e: MotionEvent): Boolean = false
 }
