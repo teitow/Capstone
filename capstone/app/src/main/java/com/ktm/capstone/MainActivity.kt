@@ -8,6 +8,8 @@ import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.content.Context
+import android.graphics.Color
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.SimpleOnPageChangeListener
 import java.util.Locale
@@ -25,6 +27,19 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // ThemePref에서 다크 모드와 저시각자 모드 설정을 가져옴
+        val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+        val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        val isLowVisionMode = themePref.getBoolean("LOW_VISION_MODE", false)
+
+        // activity_main.xml의 루트 레이아웃에서 main_layout ID를 설정한 경우 이를 참조
+        val layout = findViewById<View>(R.id.viewPager)
+
+        // 저시각자 모드는 라이트 모드를 기반으로 하여 배경색을 흰색으로 설정
+        layout.setBackgroundColor(
+            if (isLowVisionMode) Color.WHITE else if (isDarkMode) Color.BLACK else Color.WHITE
+        )
 
         if (savedInstanceState != null) {
             hasShownInitialInstruction = savedInstanceState.getBoolean("hasShownInitialInstruction", false)

@@ -21,27 +21,36 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
     private lateinit var currentModeTextView: TextView
+
+    // 메뉴 옵션에 '저시각자 모드' 추가
     private var options = listOf(
         "라이트 모드",
-        "다크 모드"
+        "다크 모드",
+        "저시각자 모드" // 저시각자 모드 추가
     )
+
     private var selectedPosition = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dark_mode)
 
-        supportActionBar?.title = "모드 선택"
+        supportActionBar?.title = "메뉴 색상 변경" // '모드 선택'을 '메뉴 색상 변경'으로 변경
 
         tts = TextToSpeech(this, this)
 
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        val isLowVisionMode = themePref.getBoolean("LOW_VISION_MODE", false)
+
+        // 저시각자 모드일 때는 라이트 모드를 베이스로 설정
+        val isLightMode = !isDarkMode && !isLowVisionMode
+
         val titleTextView = findViewById<TextView>(R.id.titleTextView)
-        titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+        titleTextView.setTextColor(if (isLightMode || isLowVisionMode) Color.BLACK else Color.WHITE)
 
         currentModeTextView = findViewById(R.id.currentModeTextView)
-        currentModeTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
+        currentModeTextView.setTextColor(if (isLightMode || isLowVisionMode) Color.BLACK else Color.WHITE)
         currentModeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
         updateCurrentModeText()
 
@@ -51,7 +60,7 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         optionsRecyclerView.adapter = adapter
 
         val layout = findViewById<LinearLayout>(R.id.root_layout)
-        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
+        layout.setBackgroundColor(if (isLowVisionMode || isLightMode) Color.WHITE else Color.BLACK)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -98,15 +107,24 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         })
 
-        // 초기 선택 상태 업데이트
-        selectedPosition = if (isDarkMode) 1 else 0
+        // 초기 선택 상태 업데이트 (저시각자 모드 포함)
+        selectedPosition = when {
+            isLowVisionMode -> 2
+            isDarkMode -> 1
+            else -> 0
+        }
         updateSelection()
     }
 
     private fun updateCurrentModeText() {
         val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = sharedPref.getBoolean("DARK_MODE", false)
-        val mode = if (isDarkMode) "다크 모드" else "라이트 모드"
+        val isLowVisionMode = sharedPref.getBoolean("LOW_VISION_MODE", false)
+        val mode = when {
+            isLowVisionMode -> "저시각자 모드"
+            isDarkMode -> "다크 모드"
+            else -> "라이트 모드"
+        }
         currentModeTextView.text = "현재 모드 : $mode"
     }
 
@@ -118,7 +136,8 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun executeOption(position: Int) {
         stopTTS()
         val isDarkMode = position == 1
-        saveMode(isDarkMode)
+        val isLowVisionMode = position == 2
+        saveMode(isDarkMode, isLowVisionMode)
         updateCurrentModeText()
         speakOption(".")
 
@@ -128,10 +147,11 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }, 500)
     }
 
-    private fun saveMode(isDarkMode: Boolean) {
+    private fun saveMode(isDarkMode: Boolean, isLowVisionMode: Boolean) {
         val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putBoolean("DARK_MODE", isDarkMode)
+            putBoolean("LOW_VISION_MODE", isLowVisionMode)
             apply()
         }
     }
@@ -153,7 +173,12 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (status == TextToSpeech.SUCCESS) {
             val sharedPrefTheme = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
             val isDarkMode = sharedPrefTheme.getBoolean("DARK_MODE", false)
-            val mode = if (isDarkMode) "다크 모드" else "라이트 모드"
+            val isLowVisionMode = sharedPrefTheme.getBoolean("LOW_VISION_MODE", false)
+            val mode = when {
+                isLowVisionMode -> "저시각자 모드"
+                isDarkMode -> "다크 모드"
+                else -> "라이트 모드"
+            }
             val sharedPrefTTS = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
             val pitch = sharedPrefTTS.getFloat("pitch", 1.0f)
             val speed = sharedPrefTTS.getFloat("speed", 1.0f)

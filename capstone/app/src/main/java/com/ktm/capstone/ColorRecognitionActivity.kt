@@ -82,6 +82,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         setTheme(isDarkMode)
 
+        // TTS 초기화
         tts = TextToSpeech(this, this)
         prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         imageView = findViewById(R.id.imageView)
@@ -97,11 +98,16 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                 return true
             }
         })
+
+        // ColorModePref에서 저장된 모드 읽기
+        val modePrefs = getSharedPreferences("ColorModePref", Context.MODE_PRIVATE)
+        descriptionMode = modePrefs.getString("MODE", "BASIC") ?: "BASIC" // 기본값으로 BASIC 설정
+        Log.d("ColorRecognition", "Loaded mode: $descriptionMode") // 로드된 모드를 로그로 출력
+
         initializeCamera()
         setupTTS()
-
-        descriptionMode = intent.getStringExtra("MODE") ?: "BASIC"
     }
+
 
     private fun setTheme(isDarkMode: Boolean) {
         if (isDarkMode) {
@@ -227,7 +233,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
             .build()
 
         val base64Image = encodeImageToBase64(photoFile, 512, 512) // 이미지를 512x512로 리사이즈하여 Base64 인코딩
-        val descriptionText = "시각 장애인을 위한 설명이 필요합니다, 지금 현재 카메라가 촬영하고 있는 물체중에 카메라에 가장 가까운 물체의 색상을 서술해주세요."
+        val descriptionText = "시각 장애인을 위한 설명이 필요합니다, 지금 현재 카메라가 촬영하고 있는 물체중에 카메라에 가장 가까운 물체의 색상을 간략하게 서술해주세요."
 
         val json = JSONObject().apply {
             put("model", "gpt-4o")

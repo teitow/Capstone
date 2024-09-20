@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="16dp"
-        android:text="흑백 모드 선택"
+        android:text="메뉴 색상 선택"
         android:textSize="48sp"
         android:textStyle="bold" />
 

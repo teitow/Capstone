@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.GestureDetector
 import android.view.MotionEvent
+import android.view.View
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,12 +26,12 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var prefs: SharedPreferences
     private var options = listOf(
         "TTS 속도",
-        "다크 모드",
+        "메뉴 색상 변경",
         "배터리 세이브",
         "객체 모드",
-        "색상 모드",
         "날씨 모드",
-        "바코드 모드"
+        "바코드 모드",
+        "색상 모드"
     )
     private var selectedPosition = 0
 
@@ -51,16 +52,19 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
+        val isLowVisionMode = themePref.getBoolean("LOW_VISION_MODE", false)
         val titleTextView = findViewById<TextView>(R.id.titleTextView)
         titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
 
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = OptionsAdapter(options, isDarkMode)
+        adapter = OptionsAdapter(options, isDarkMode) // 어댑터에 순서 변경된 옵션 전달
         optionsRecyclerView.adapter = adapter
 
-        val layout = findViewById<LinearLayout>(R.id.activity_config_layout)
-        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
+        val layout = findViewById<View>(R.id.activity_config_layout)
+        layout.setBackgroundColor(
+            if (isLowVisionMode) Color.WHITE else if (isDarkMode) Color.BLACK else Color.WHITE
+        )
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -120,7 +124,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val selectedOption = options[position]
         when (selectedOption) {
             "TTS 속도" -> startActivity(Intent(this, VoiceSettingsActivity::class.java))
-            "다크 모드" -> startActivity(Intent(this, DarkModeActivity::class.java))
+            "메뉴 색상 변경" -> startActivity(Intent(this, DarkModeActivity::class.java))
             "배터리 세이브" -> startActivity(Intent(this, BatterySaveActivity::class.java))
             "객체 모드" -> startActivity(Intent(this, ObjectModeActivity::class.java))
             "색상 모드" -> startActivity(Intent(this, ColorModeActivity::class.java))

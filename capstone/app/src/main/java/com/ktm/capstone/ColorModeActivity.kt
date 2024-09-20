@@ -1,6 +1,7 @@
 package com.ktm.capstone
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -114,9 +115,9 @@ class ColorModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         stopTTS()
         val selectedOption = options[position]
         val mode = if (selectedOption == "기본 모드") "BASIC" else "DETAILED"
-        saveMode(mode)
+        saveMode(mode) // 모드 저장
         updateCurrentModeText()
-        finish()
+        finish() // 여기서 액티비티를 종료합니다. ColorRecognitionActivity로 이동하지 않습니다.
     }
 
     private fun saveMode(mode: String) {
@@ -142,8 +143,8 @@ class ColorModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val sharedPrefColor = getSharedPreferences("ColorModePref", Context.MODE_PRIVATE)
-            val mode = sharedPrefColor.getString("MODE", "기본 모드")
+            val sharedPref = getSharedPreferences("ColorModePref", Context.MODE_PRIVATE)
+            val mode = sharedPref.getString("MODE", "기본 모드")
             val sharedPrefTTS = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
             val pitch = sharedPrefTTS.getFloat("pitch", 1.0f)
             val speed = sharedPrefTTS.getFloat("speed", 1.0f)
