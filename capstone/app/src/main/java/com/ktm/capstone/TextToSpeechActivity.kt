@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.speech.tts.TextToSpeech
-import android.speech.tts.TextToSpeech.OnInitListener
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import android.view.GestureDetector
@@ -18,14 +17,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.OnImageSavedCallback
-import androidx.camera.core.ImageCapture.OutputFileOptions
-import androidx.camera.core.ImageCapture.OutputFileResults
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -35,15 +27,13 @@ import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import com.google.mlkit.nl.languageid.LanguageIdentification
-import com.google.mlkit.nl.languageid.LanguageIdentifier
 import java.io.File
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.ExecutionException
 import kotlin.math.abs
 
-class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
+class TextToSpeechActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private var camera: Camera? = null
     private var preview: Preview? = null
@@ -59,6 +49,7 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
     private var isImageDisplayed = false
     private var cameraProvider: ProcessCameraProvider? = null
     private var cameraSelector: CameraSelector? = null
+    private var isSimpleMode = false // 심플 모드 여부를 저장
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -77,13 +68,12 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
                 Log.e("TTS", "Korean language is not supported.")
             } else {
                 isTTSInitialized = true
-                speak("사진을 찍어주세요.", "ID_INITIAL")
+                speak("텍스트 음성 변환입니다. 사진을 찍어주세요.", "ID_INITIAL")
             }
         } else {
             Log.e("TTS", "Initialization failed.")
         }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +82,10 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         setTheme(isDarkMode)
+
+        // 심플 모드 여부 확인
+        val explainModePref = getSharedPreferences("ExplainModePref", Context.MODE_PRIVATE)
+        isSimpleMode = explainModePref.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         tts = TextToSpeech(this, this)
         koreanRecognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
@@ -121,8 +115,6 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
         }
     }
 
-
-
     private fun setupTTS() {
         tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String) {
@@ -131,11 +123,17 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
 
             override fun onDone(utteranceId: String) {
                 if ("ID_TEXT_READ" == utteranceId) {
-                    tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
-                    speakGuidance(
-                        "다른 문장을 읽고 싶다면 화면을 두 번 누르세요. 메인 화면으로 돌아가고 싶다면 화면을 상하로 슬라이드 해주세요.",
-                        "ID_GUIDANCE"
-                    )
+                    if (isSimpleMode) {
+                        // 심플 모드일 때는 "문자 인식이 완료되었습니다." 출력
+                        speak("문자 인식이 완료되었습니다.", "ID_COMPLETED")
+                    } else {
+                        // 베이직 모드에서는 기존 안내 메시지 출력
+                        tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
+                        speakGuidance(
+                            "다른 문장을 읽고 싶다면 화면을 두 번 누르세요. 메인 화면으로 돌아가고 싶다면 화면을 상하로 슬라이드 해주세요.",
+                            "ID_GUIDANCE"
+                        )
+                    }
                 }
             }
 
@@ -191,8 +189,8 @@ class TextToSpeechActivity : AppCompatActivity(), OnInitListener {
         imageCapture?.takePicture(
             options,
             ContextCompat.getMainExecutor(this),
-            object : OnImageSavedCallback {
-                override fun onImageSaved(outputFileResults: OutputFileResults) {
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     cameraClickSound?.start()
                     val savedUri = Uri.fromFile(photoFile)
                     imageView?.setImageURI(savedUri)

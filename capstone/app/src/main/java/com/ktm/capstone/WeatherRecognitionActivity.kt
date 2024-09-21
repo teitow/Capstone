@@ -41,6 +41,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     private lateinit var gestureDetector: GestureDetector
     private var isDetailedMode: Boolean = false
     private var yStart: Float = 0f
+    private var isSimpleMode = false  // 심플 모드 여부 확인 변수
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,6 +51,10 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         setTheme(isDarkMode)
+
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         supportActionBar?.title = "날씨 확인"
 
@@ -260,13 +265,23 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                         tomorrowWeatherTextView.visibility = TextView.GONE
                     }
 
+                    // 모드에 따른 TTS 메시지 변경
                     val fullText = if (isDetailedMode) {
                         "${locationTextView.text}, ${temperatureTextView.text}, $todayWeatherText, ${rainProbabilityTextView.text}, ${windSpeedTextView.text}, 최대 자외선 지수는 ${String.format("%.1f", maxUVI)}이고 자외선 단계는 $uviCategory 입니다. $tomorrowWeatherText"
                     } else {
                         "${locationTextView.text}, ${temperatureTextView.text}, ${rainProbabilityTextView.text}"
                     }
+
+                    // 모드에 따른 설명 완료 메시지
+                    val completionMessage = if (isSimpleMode) {
+                        "날씨 설명이 완료되었습니다."
+                    } else {
+                        "날씨 설명이 완료되었습니다. 메인 화면으로 돌아가고 싶다면 화면을 슬라이드 해주세요."
+                    }
+
+                    // TTS로 전체 메시지 출력
                     speakText(fullText) {
-                        speakText("메인 화면으로 돌아가고 싶다면 화면을 슬라이드 해주세요.")
+                        speakText(completionMessage)
                     }
                 }
             } else {
@@ -276,6 +291,7 @@ class WeatherRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             Log.e("WeatherRecognition", "Error parsing weather data", e)
         }
     }
+
 
     private fun translateWeatherDescription(description: String): String {
         return when (description) {

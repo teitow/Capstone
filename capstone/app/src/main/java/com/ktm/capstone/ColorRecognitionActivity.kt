@@ -53,6 +53,7 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
     private lateinit var cameraSelector: CameraSelector
     private var descriptionMode: String = "BASIC"
     private lateinit var prefs: SharedPreferences
+    private var isSimpleMode = false  // 심플 모드 여부 확인 변수
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -66,7 +67,14 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
                     val savedSpeed = prefs.getFloat("speed", 1.0f)
                     it.setPitch(savedPitch)
                     it.setSpeechRate(savedSpeed)
-                    speak("색상을 인식하려면 사진을 찍어주세요.", "ID_INITIAL")
+
+                    // 모드에 따른 첫 메시지 출력
+                    val initialMessage = if (isSimpleMode) {
+                        "색상 인식 입니다."
+                    } else {
+                        "색상을 인식하려면 더블탭을 해 사진을 찍어주세요."
+                    }
+                    speak(initialMessage, "ID_INITIAL")
                 }
             }
         } else {
@@ -81,6 +89,10 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         setTheme(isDarkMode)
+
+        // 심플/베이직 모드 확인
+        val explainModePrefs = getSharedPreferences("ExplainModePref", Context.MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         // TTS 초기화
         tts = TextToSpeech(this, this)
@@ -108,7 +120,6 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
         setupTTS()
     }
 
-
     private fun setTheme(isDarkMode: Boolean) {
         if (isDarkMode) {
             setContentView(R.layout.activity_color_recognition_dark)
@@ -116,7 +127,6 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
             setContentView(R.layout.activity_color_recognition)
         }
     }
-
 
     private fun initializeCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
@@ -149,11 +159,13 @@ class ColorRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListene
 
             override fun onDone(utteranceId: String) {
                 if ("COLOR_DETECTED" == utteranceId) {
-                    tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
-                    speak(
-                        "색상을 다시 인식하려면 화면을 두 번 탭하세요. 메인 화면으로 돌아가려면 화면을 상하로 슬라이드하세요.",
-                        "ID_GUIDANCE"
-                    )
+                    // 모드에 따라 완료 메시지 출력
+                    val guidanceMessage = if (isSimpleMode) {
+                        "색상 인식이 완료되었습니다."
+                    } else {
+                        "색상을 다시 인식하려면 화면을 두 번 탭하세요. 메인 화면으로 돌아가려면 화면을 상하로 슬라이드하세요."
+                    }
+                    speak(guidanceMessage, "ID_GUIDANCE")
                 }
             }
 

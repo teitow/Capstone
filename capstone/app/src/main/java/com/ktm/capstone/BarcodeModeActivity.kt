@@ -26,12 +26,17 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "디테일 모드"
     )
     private var selectedPosition = 0
+    private var isSimpleMode = false // 심플 모드 여부 확인 변수
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_barcode_mode)
 
         supportActionBar?.title = "바코드 모드 선택"
+
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         tts = TextToSpeech(this, this)
 
@@ -136,12 +141,15 @@ class BarcodeModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts.language = Locale.KOREAN
             tts.setPitch(pitch)
             tts.setSpeechRate(speed)
-            tts.speak(
-                "현재 바코드 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
-                TextToSpeech.QUEUE_FLUSH,
-                null,
-                "InitialInstructions"
-            )
+
+            // 모드에 따른 TTS 안내 문구 설정
+            val message = if (isSimpleMode) {
+                "바코드 모드입니다. 현재 모드는 $mode 입니다."
+            } else {
+                "현재 바코드 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요."
+            }
+
+            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "InitialInstructions")
         }
     }
 

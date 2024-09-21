@@ -52,6 +52,7 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
     private var cameraSelector: CameraSelector? = null
     private var descriptionMode: String = "BASIC"
     private lateinit var prefs: SharedPreferences
+    private var isSimpleMode = false // 심플 모드 여부 확인 변수
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
@@ -65,7 +66,14 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                     val savedSpeed = prefs.getFloat("speed", 1.0f)
                     it.setPitch(savedPitch)
                     it.setSpeechRate(savedSpeed)
-                    speak("사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요.", "ID_INITIAL")
+
+                    // 모드에 따른 첫 메시지 출력
+                    val initialMessage = if (isSimpleMode) {
+                        "객체 인식 입니다."
+                    } else {
+                        "객체 인식 입니다. 더블 탭을 해 사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요."
+                    }
+                    speak(initialMessage, "ID_INITIAL")
                 }
             }
         } else {
@@ -97,6 +105,11 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                 return true
             }
         })
+
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
+
         initializeCamera()
         setupTTS()
 
@@ -119,7 +132,11 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
             }
 
             override fun onDone(utteranceId: String) {
-                if ("ID_TEXT_READ" == utteranceId) {
+                if ("ID_TEXT_READ" == utteranceId && isSimpleMode) {
+                    // 설명이 완료되었을 때 심플 모드에서 "설명이 완료되었습니다." 출력
+                    speak("설명이 완료되었습니다.", "ID_COMPLETED")
+                } else if ("ID_TEXT_READ" == utteranceId) {
+                    // 베이직 모드에서만 추가 설명 제공
                     tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
                     speakGuidance(
                         "다른 문장을 읽고 싶다면 화면을 두 번 누르세요. 메인 화면으로 돌아가고 싶다면 화면을 상하로 슬라이드 해주세요.",
@@ -259,6 +276,8 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
                         runOnUiThread {
                             ocrTextView?.text = description
                             ocrTextView?.visibility = View.VISIBLE
+
+                            // 설명 후 완료 메시지 출력
                             speak(description, "ID_TEXT_READ")
                         }
                     } catch (e: JSONException) {
@@ -305,7 +324,15 @@ class ObjectRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListen
         ocrTextView?.visibility = View.GONE
         isImageDisplayed = false
         initializeCamera() // 카메라를 다시 초기화
-        speak("사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요.", "ID_INITIAL")
+
+        // 모드에 따른 초기 메시지
+        val resetMessage = if (isSimpleMode) {
+            "객체 인식 입니다. 사진을 찍어주세요."
+        } else {
+            "사진을 찍어주세요. 메인 화면으로 가고 싶으시다면 위나 아래로 슬라이드 해주세요."
+        }
+
+        speak(resetMessage, "ID_INITIAL")
     }
 
     override fun onDestroy() {

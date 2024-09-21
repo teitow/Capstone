@@ -29,12 +29,17 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "절전 모드"
     )
     private var selectedPosition = 0
+    private var isSimpleMode = false // 심플 모드 확인 변수
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_battery_save)
 
         supportActionBar?.title = "배터리 세이브 모드"
+
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         tts = TextToSpeech(this, this)
 
@@ -189,12 +194,15 @@ class BatterySaveActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts.language = Locale.KOREAN
             tts.setPitch(pitch)
             tts.setSpeechRate(speed)
-            tts.speak(
-                "현재 배터리 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
-                TextToSpeech.QUEUE_FLUSH,
-                null,
-                "InitialInstructions"
-            )
+
+            // 모드에 따른 TTS 안내 문구 설정
+            val message = if (isSimpleMode) {
+                "배터리 세이브입니다. 현재 모드는 $mode 입니다."
+            } else {
+                "현재 배터리 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요."
+            }
+
+            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "InitialInstructions")
         }
     }
 

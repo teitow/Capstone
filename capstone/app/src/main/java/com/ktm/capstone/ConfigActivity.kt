@@ -27,6 +27,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var options = listOf(
         "TTS 속도",
         "메뉴 색상 변경",
+        "설명 제거 모드",
         "배터리 세이브",
         "객체 모드",
         "날씨 모드",
@@ -34,12 +35,17 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         "색상 모드"
     )
     private var selectedPosition = 0
+    private var isSimpleMode = false // 심플 모드 확인 변수
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_config)
 
         supportActionBar?.title = "앱 환경 설정"
+
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
 
         prefs = getSharedPreferences("TTSConfig", MODE_PRIVATE)
         val savedPitch = prefs.getFloat("pitch", 1.0f)
@@ -130,6 +136,7 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             "색상 모드" -> startActivity(Intent(this, ColorModeActivity::class.java))
             "날씨 모드" -> startActivity(Intent(this, WeatherModeActivity::class.java))
             "바코드 모드" -> startActivity(Intent(this, BarcodeModeActivity::class.java))
+            "설명 제거 모드" -> startActivity(Intent(this, SimpleExplainModeActivity::class.java))
         }
     }
 
@@ -156,12 +163,15 @@ class ConfigActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             tts.language = Locale.KOREAN
-            tts.speak(
-                "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
-                TextToSpeech.QUEUE_FLUSH,
-                null,
-                "InitialInstructions"
-            )
+
+            // 모드에 따른 TTS 안내 문구 설정
+            val message = if (isSimpleMode) {
+                "앱 환경 설정입니다."
+            } else {
+                "앱 환경 설정 입니다. 좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요."
+            }
+
+            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "InitialInstructions")
         }
     }
 

@@ -17,12 +17,14 @@ import kotlin.math.abs
 
 class MainActivity : Activity(), GestureDetector.OnGestureListener,
     GestureDetector.OnDoubleTapListener {
+
     private lateinit var viewPager: ViewPager
     private lateinit var adapter: FeaturesPagerAdapter
     private var tts: TextToSpeech? = null
     private lateinit var gestureDetector: GestureDetector
     private var prefs: SharedPreferences? = null
     private var hasShownInitialInstruction = false
+    private var isSimpleMode = false // 심플 모드 여부 확인 변수
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +47,10 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
             hasShownInitialInstruction = savedInstanceState.getBoolean("hasShownInitialInstruction", false)
         }
 
+        // 현재 모드 확인 (심플 모드 여부 체크)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
+
         viewPager = findViewById(R.id.viewPager)
         adapter = FeaturesPagerAdapter(this)
         viewPager.adapter = adapter
@@ -65,9 +71,17 @@ class MainActivity : Activity(), GestureDetector.OnGestureListener,
                 tts?.setLanguage(Locale.KOREAN)
                 tts?.setPitch(savedPitch) // 저장된 피치 적용
                 tts?.setSpeechRate(savedSpeed) // 저장된 속도 적용
+
+                // 모드에 따른 TTS 메시지 설정
+                val message = if (isSimpleMode) {
+                    "메인 화면입니다."
+                } else {
+                    "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요."
+                }
+
                 if (!hasShownInitialInstruction) {
                     tts?.speak(
-                        "좌우 슬라이드로 기능 선택을 해주시고 더블탭으로 기능 실행을 해주세요, 원래 기능으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                        message,
                         TextToSpeech.QUEUE_FLUSH,
                         null,
                         "InitialInstruction"

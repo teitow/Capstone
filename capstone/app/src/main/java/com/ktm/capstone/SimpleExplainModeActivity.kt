@@ -14,59 +14,54 @@ import java.util.Locale
 import kotlin.math.abs
 import android.widget.TextView
 
-class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class SimpleExplainModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tts: TextToSpeech
     private lateinit var gestureDetector: GestureDetector
     private lateinit var optionsRecyclerView: RecyclerView
     private lateinit var adapter: OptionsAdapter
     private lateinit var currentModeTextView: TextView
-
-    // 메뉴 옵션에 '저시각자 모드' 추가
     private var options = listOf(
-        "라이트 모드",
-        "다크 모드",
-        "저시각자 모드" // 저시각자 모드 추가
+        "SIMPLE 모드", // 심플 모드
+        "BASIC 모드"   // 베이직 모드
     )
-
     private var selectedPosition = 0
-    private var isSimpleMode = false // 심플 모드 확인 변수
+    private var isSimpleMode = false // 심플 모드 여부를 저장
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_dark_mode)
+        setContentView(R.layout.activity_simple_explain_mode)
 
-        supportActionBar?.title = "메뉴 색상 변경" // '모드 선택'을 '메뉴 색상 변경'으로 변경
+        // 액션바 설정
+        supportActionBar?.title = "설명 생략 모드"
 
-        // 현재 모드 확인 (심플 모드 여부 체크)
-        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
-        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
-
+        // TTS 초기화
         tts = TextToSpeech(this, this)
 
+        // 다크 모드 설정 가져오기
         val themePref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
-        val isLowVisionMode = themePref.getBoolean("LOW_VISION_MODE", false)
 
-        // 저시각자 모드일 때는 라이트 모드를 베이스로 설정
-        val isLightMode = !isDarkMode && !isLowVisionMode
-
+        // 제목 및 현재 모드 텍스트뷰 설정
         val titleTextView = findViewById<TextView>(R.id.titleTextView)
-        titleTextView.setTextColor(if (isLightMode || isLowVisionMode) Color.BLACK else Color.WHITE)
+        titleTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
 
         currentModeTextView = findViewById(R.id.currentModeTextView)
-        currentModeTextView.setTextColor(if (isLightMode || isLowVisionMode) Color.BLACK else Color.WHITE)
+        currentModeTextView.setTextColor(if (isDarkMode) Color.WHITE else Color.BLACK)
         currentModeTextView.setTypeface(null, android.graphics.Typeface.BOLD)
         updateCurrentModeText()
 
+        // RecyclerView 설정
         optionsRecyclerView = findViewById(R.id.optionsRecyclerView)
         optionsRecyclerView.layoutManager = LinearLayoutManager(this)
         adapter = OptionsAdapter(options, isDarkMode)
         optionsRecyclerView.adapter = adapter
 
+        // 레이아웃 배경 색상 설정
         val layout = findViewById<LinearLayout>(R.id.root_layout)
-        layout.setBackgroundColor(if (isLowVisionMode || isLightMode) Color.WHITE else Color.BLACK)
+        layout.setBackgroundColor(if (isDarkMode) Color.BLACK else Color.WHITE)
 
+        // 제스처 감지기 설정
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 executeOption(selectedPosition)
@@ -81,26 +76,31 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ): Boolean {
                 if (abs(velocityX) > abs(velocityY)) {
                     if (velocityX > 0) {
+                        // 오른쪽으로 스와이프하면 다음 옵션 선택
                         selectedPosition = (selectedPosition + 1) % options.size
                     } else {
+                        // 왼쪽으로 스와이프하면 이전 옵션 선택
                         selectedPosition = (selectedPosition - 1 + options.size) % options.size
                     }
                     updateSelection()
                 } else {
+                    // 상하로 스와이프하면 액티비티 종료
                     finish()
                 }
                 return true
             }
         })
 
+        // RecyclerView에서 터치 이벤트를 슬라이드 및 더블탭으로만 처리하도록 설정
         optionsRecyclerView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
             true
         }
 
+        // 기본 클릭을 차단하고 제스처만 허용
         optionsRecyclerView.addOnItemTouchListener(object : RecyclerView.OnItemTouchListener {
             override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
-                return true // 터치 이벤트를 차단하여 기본 클릭 동작을 막음
+                return true // 터치 이벤트 차단
             }
 
             override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {
@@ -111,56 +111,42 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 // 처리하지 않음
             }
         })
-
-        // 초기 선택 상태 업데이트 (저시각자 모드 포함)
-        selectedPosition = when {
-            isLowVisionMode -> 2
-            isDarkMode -> 1
-            else -> 0
-        }
-        updateSelection()
     }
 
+    // 현재 모드를 업데이트하는 함수
     private fun updateCurrentModeText() {
-        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
-        val isDarkMode = sharedPref.getBoolean("DARK_MODE", false)
-        val isLowVisionMode = sharedPref.getBoolean("LOW_VISION_MODE", false)
-        val mode = when {
-            isLowVisionMode -> "저시각자 모드"
-            isDarkMode -> "다크 모드"
-            else -> "라이트 모드"
-        }
+        val sharedPref = getSharedPreferences("ExplainModePref", Context.MODE_PRIVATE)
+        val mode = sharedPref.getString("CURRENT_MODE", "BASIC 모드")
         currentModeTextView.text = "현재 모드 : $mode"
+        isSimpleMode = mode == "SIMPLE" // 모드가 심플 모드인지 확인
     }
 
+    // 선택된 항목을 업데이트하고 TTS로 말해주는 함수
     private fun updateSelection() {
         adapter.setSelectedPosition(selectedPosition)
         speakOption(options[selectedPosition])
     }
 
+    // 선택된 모드를 실행하는 함수
     private fun executeOption(position: Int) {
         stopTTS()
-        val isDarkMode = position == 1
-        val isLowVisionMode = position == 2
-        saveMode(isDarkMode, isLowVisionMode)
+        val selectedOption = options[position]
+        val mode = if (selectedOption == "SIMPLE 모드") "SIMPLE" else "BASIC"
+        saveMode(mode)
         updateCurrentModeText()
-        speakOption(".") // 옵션 실행 후 간단하게 "."을 말하도록 설정
-
-        // 0.5초 후에 앱 종료
-        optionsRecyclerView.postDelayed({
-            System.exit(0)
-        }, 500)
+        finish()
     }
 
-    private fun saveMode(isDarkMode: Boolean, isLowVisionMode: Boolean) {
-        val sharedPref = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
+    // 선택된 모드를 SharedPreferences에 저장하는 함수
+    private fun saveMode(mode: String) {
+        val sharedPref = getSharedPreferences("ExplainModePref", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
-            putBoolean("DARK_MODE", isDarkMode)
-            putBoolean("LOW_VISION_MODE", isLowVisionMode)
+            putString("CURRENT_MODE", mode)
             apply()
         }
     }
 
+    // 선택된 옵션을 TTS로 읽어주는 함수
     private fun speakOption(option: String) {
         stopTTS()
         if (::tts.isInitialized) {
@@ -168,22 +154,18 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    // TTS 중지 함수
     private fun stopTTS() {
         if (::tts.isInitialized && tts.isSpeaking) {
             tts.stop()
         }
     }
 
+    // TTS 초기화
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            val sharedPrefTheme = getSharedPreferences("ThemePref", Context.MODE_PRIVATE)
-            val isDarkMode = sharedPrefTheme.getBoolean("DARK_MODE", false)
-            val isLowVisionMode = sharedPrefTheme.getBoolean("LOW_VISION_MODE", false)
-            val mode = when {
-                isLowVisionMode -> "저시각자 모드"
-                isDarkMode -> "다크 모드"
-                else -> "라이트 모드"
-            }
+            val sharedPref = getSharedPreferences("ExplainModePref", Context.MODE_PRIVATE)
+            val mode = sharedPref.getString("CURRENT_MODE", "BASIC 모드")
             val sharedPrefTTS = getSharedPreferences("TTSConfig", Context.MODE_PRIVATE)
             val pitch = sharedPrefTTS.getFloat("pitch", 1.0f)
             val speed = sharedPrefTTS.getFloat("speed", 1.0f)
@@ -191,17 +173,26 @@ class DarkModeActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             tts.setPitch(pitch)
             tts.setSpeechRate(speed)
 
-            // 모드에 따른 TTS 안내 문구 설정
-            val message = if (isSimpleMode) {
-                "메뉴 색상 선택입니다. 현재 모드는 $mode 입니다."
+            // 심플 모드일 때는 간단한 메시지, 베이직 모드일 때는 상세 메시지 출력
+            if (isSimpleMode) {
+                tts.speak(
+                    "설명 생략 모드입니다. 현재 모드는 $mode 입니다.",
+                    TextToSpeech.QUEUE_FLUSH,
+                    null,
+                    "InitialInstructions"
+                )
             } else {
-                "메뉴 색상 선택입니다. 현재 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요, 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요."
+                tts.speak(
+                    "현재 설명 생략 모드는 $mode 입니다. 좌우 슬라이드로 모드를 선택해주시고 더블탭으로 실행해주세요. 원래 화면으로 돌아가고 싶으시다면 화면을 상하로 슬라이드해주세요.",
+                    TextToSpeech.QUEUE_FLUSH,
+                    null,
+                    "InitialInstructions"
+                )
             }
-
-            tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "InitialInstructions")
         }
     }
 
+    // TTS 종료 처리
     override fun onDestroy() {
         if (::tts.isInitialized) {
             tts.stop()

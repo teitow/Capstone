@@ -33,7 +33,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
     private lateinit var viewFinder: PreviewView
     private var yStart = 0f
     private var imageCapture: ImageCapture? = null
-    private var mode: String = "BASIC"
+    private var isSimpleMode = false  // 심플 모드 여부 확인 변수
 
     companion object {
         private const val REQUEST_CODE_PERMISSIONS = 10
@@ -58,7 +58,13 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 Log.e("TTS", "Korean language is not supported.")
             } else {
                 isTTSInitialized = true
-                speak("화면을 두 번 누르면 바코드 인식이 시작됩니다. 세로로 스캔이 되니 물건의 바코드를 세로로 돌리거나 핸드폰을 가로로 돌려주세요. 카메라를 움직이다 바코드에 맞추면 자동으로 인식됩니다.", "ID_INITIAL")
+                // 모드에 따른 초기 메시지 설정
+                val initialMessage = if (isSimpleMode) {
+                    "바코드 인식 입니다."
+                } else {
+                    "바코드 인식 입니다. 화면을 두 번 누르면 바코드 인식이 시작됩니다. 세로로 스캔이 되니 물건의 바코드를 세로로 돌리거나 핸드폰을 가로로 돌려주세요. 카메라를 움직이다 바코드에 맞추면 자동으로 인식됩니다."
+                }
+                speak(initialMessage, "ID_INITIAL")
             }
         } else {
             Log.e("TTS", "Initialization failed.")
@@ -73,6 +79,10 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         val isDarkMode = themePref.getBoolean("DARK_MODE", false)
         setTheme(isDarkMode)
 
+        // 모드 확인 (SimpleExplainModeActivity에서 저장한 값을 불러옴)
+        val explainModePrefs = getSharedPreferences("ExplainModePref", MODE_PRIVATE)
+        isSimpleMode = explainModePrefs.getString("CURRENT_MODE", "BASIC") == "SIMPLE"
+
         tts = TextToSpeech(this, this)
         resultTextView = findViewById(R.id.resultTextView)
         viewFinder = findViewById(R.id.viewFinder)
@@ -83,6 +93,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                 return true
             }
         })
+
         setupTTS()
 
         if (allPermissionsGranted()) {
@@ -90,9 +101,6 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         } else {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
-
-        val sharedPref = getSharedPreferences("BarcodeModePref", Context.MODE_PRIVATE)
-        mode = sharedPref.getString("MODE", "BASIC") ?: "BASIC"
     }
 
     private fun setTheme(isDarkMode: Boolean) {
@@ -102,7 +110,6 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
             setContentView(R.layout.activity_barcode_recognition)
         }
     }
-
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
@@ -144,7 +151,13 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
         val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
         if (result != null) {
             if (result.contents == null) {
-                speak("바코드 스캔에 실패했습니다. 다시 시도하려면 화면을 두 번 누르세요.", "ID_ERROR")
+                // 스캔 실패 시 메시지
+                val errorMessage = if (isSimpleMode) {
+                    "바코드 스캔에 실패했습니다."
+                } else {
+                    "바코드 스캔에 실패했습니다. 다시 시도하려면 화면을 두 번 누르세요."
+                }
+                speak(errorMessage, "ID_ERROR")
             } else {
                 fetchBarcodeInfo(result.contents)
             }
@@ -185,15 +198,7 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
                         if (productNameElement != null && productCategoryElement != null) {
                             val productName = productNameElement.text()
                             val productCategory = productCategoryElement.text().split(" > ").last()
-                            val resultText = if (mode == "BASIC") {
-                                "제품명: $productName\n상품분류: $productCategory"
-                            } else {
-                                val manufacturer = manufacturerElement?.text() ?: "정보 없음"
-                                val seller = sellerElement?.text() ?: "정보 없음"
-                                val dimensions = dimensionsElement?.text() ?: "정보 없음"
-                                val totalWeight = totalWeightElement?.text() ?: "정보 없음"
-                                "제품명: $productName\n상품분류: $productCategory\n제조사: $manufacturer\n판매자: $seller\n규격: $dimensions\n총중량: $totalWeight"
-                            }
+                            val resultText = "제품명: $productName\n상품분류: $productCategory"
                             runOnUiThread {
                                 resultTextView.text = resultText
                                 resultTextView.visibility = TextView.VISIBLE
@@ -240,8 +245,12 @@ class BarcodeRecognitionActivity : AppCompatActivity(), TextToSpeech.OnInitListe
 
             override fun onDone(utteranceId: String) {
                 if ("ID_RESULT" == utteranceId) {
-                    tts?.playSilentUtterance(800, TextToSpeech.QUEUE_ADD, null)
-                    speak("다시 스캔하려면 화면을 두 번 누르세요. 메인 화면으로 돌아가려면 화면을 상하로 슬라이드하세요.", "ID_GUIDANCE")
+                    val guidanceMessage = if (isSimpleMode) {
+                        "바코드 인식이 완료되었습니다."
+                    } else {
+                        "다시 스캔하려면 화면을 두 번 누르세요. 메인 화면으로 돌아가려면 화면을 상하로 슬라이드하세요."
+                    }
+                    speak(guidanceMessage, "ID_GUIDANCE")
                 }
             }
 
